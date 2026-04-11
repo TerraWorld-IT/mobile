@@ -1,0 +1,29 @@
+{
+  "name": "terraworld-mobile",
+  "version": "0.1.0",
+  "private": true,
+  "description": "TerraWorld Mobile App — Capacitor WebView shell for iOS/Android",
+  "scripts": {
+    "sync": "cap sync",
+    "open:ios": "cap open ios",
+    "open:android": "cap open android",
+    "build:android": "cd android && ./gradlew assembleDebug",
+    "build:android:release": "cd android && ./gradlew bundleRelease"
+  },
+  "dependencies": {
+    "@capacitor/app": "^8.0.0",
+    "@capacitor/camera": "^8.0.0",
+    "@capacitor/core": "^8.0.0",
+    "@capacitor/haptics": "^8.0.0",
+    "@capacitor/keyboard": "^8.0.0",
+    "@capacitor/push-notifications": "^8.0.0",
+    "@capacitor/share": "^8.0.0",
+    "@capacitor/splash-screen": "^8.0.0",
+    "@capacitor/status-bar": "^8.0.0"
+  },
+  "devDependencies": {
+    "@capacitor/android": "^8.0.0",
+    "@capacitor/cli": "^8.0.0",
+    "@capacitor/ios": "^8.0.0"
+  }
+}
