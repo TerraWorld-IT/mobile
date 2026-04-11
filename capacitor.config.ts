@@ -10,8 +10,10 @@ const config: CapacitorConfig = {
   // Remote URL — WebView loads the deployed web app directly.
   // Web code updates deploy instantly without app store re-submission.
   server: {
+    // Dev: 10.0.2.2 is Android emulator's alias for host machine localhost
+    // For real device, use your machine's LAN IP (e.g., 192.168.x.x:3000)
     url: isDev
-      ? 'http://localhost:3000'
+      ? 'http://10.0.2.2:3000'
       : 'https://terraworld.app',
     cleartext: isDev, // Allow HTTP in dev mode
   },
