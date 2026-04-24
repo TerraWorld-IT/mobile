@@ -11,10 +11,39 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  # ─────────────────────────────────────────────────────────────────
+  # 1. Validate — npm + cap sync + config check
+  # ─────────────────────────────────────────────────────────────────
+  validate:
+    name: Validate Capacitor config
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Validate capacitor.config.ts
+        run: npx cap doctor 2>&1 || true
+
+      - name: Check plugin versions
+        run: npx cap ls 2>&1
+
+  # ─────────────────────────────────────────────────────────────────
+  # 2. Android build — debug APK + size check
+  # ─────────────────────────────────────────────────────────────────
   android-build:
     name: Android Debug Build
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
+    needs: [validate]
 
     steps:
       - uses: actions/checkout@v4
@@ -35,10 +64,26 @@ jobs:
         uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: 17
+          java-version: 21
 
       - name: Build Android debug APK
         run: cd android && ./gradlew assembleDebug
+
+      - name: Check APK size
+        run: |
+          APK="android/app/build/outputs/apk/debug/app-debug.apk"
+          SIZE=$(stat -f%z "$APK" 2>/dev/null || stat -c%s "$APK")
+          SIZE_MB=$((SIZE / 1048576))
+          echo "📱 APK size: ${SIZE_MB}MB ($SIZE bytes)"
+          # Fail if APK exceeds 50MB (Play Store limit for APK is 100MB, warn early)
+          if [ "$SIZE_MB" -gt 50 ]; then
+            echo "::error::APK size exceeds 50MB (${SIZE_MB}MB). Investigate bundle bloat."
+            exit 1
+          fi
+          echo "apk_size_mb=$SIZE_MB" >> "$GITHUB_OUTPUT"
+
+      - name: Android lint check
+        run: cd android && ./gradlew lint || true
 
       - name: Upload APK artifact
         if: github.event_name == 'push'
@@ -48,6 +93,60 @@ jobs:
           path: android/app/build/outputs/apk/debug/app-debug.apk
           retention-days: 7
 
+      - name: Upload lint report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-lint-report
+          path: android/app/build/reports/lint-results-debug.html
+          if-no-files-found: ignore
+          retention-days: 7
+
+  # ─────────────────────────────────────────────────────────────────
+  # 3. Android unit tests
+  # ─────────────────────────────────────────────────────────────────
+  android-test:
+    name: Android Unit Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    needs: [validate]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Capacitor sync
+        run: npx cap sync android
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Run unit tests
+        run: cd android && ./gradlew test
+
+      - name: Upload test report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-test-report
+          path: android/app/build/reports/tests/
+          if-no-files-found: ignore
+          retention-days: 7
+
+  # ─────────────────────────────────────────────────────────────────
+  # 4. iOS build check (main branch only, macOS runner is expensive)
+  # ─────────────────────────────────────────────────────────────────
   ios-check:
     name: iOS Build Check
     runs-on: macos-14
