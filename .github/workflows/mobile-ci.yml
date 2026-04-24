@@ -64,7 +64,7 @@ jobs:
         uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: 17
+          java-version: 21
 
       - name: Build Android debug APK
         run: cd android && ./gradlew assembleDebug
@@ -130,7 +130,7 @@ jobs:
         uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: 17
+          java-version: 21
 
       - name: Run unit tests
         run: cd android && ./gradlew test
@@ -181,3 +181,4 @@ jobs:
             -configuration Debug \
             -destination 'platform=iOS Simulator,name=iPhone 16' \
             CODE_SIGNING_ALLOWED=NO
+
