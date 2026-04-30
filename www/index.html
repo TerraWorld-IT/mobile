@@ -5,28 +5,101 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>TerraWorld</title>
   <style>
+    :root {
+      color-scheme: light;
+    }
+    * { box-sizing: border-box; }
     body {
       margin: 0;
+      padding: 0 24px;
       background: #FFF8EB;
+      color: #2D2D2D;
       display: flex;
+      flex-direction: column;
       align-items: center;
       justify-content: center;
-      height: 100vh;
-      font-family: -apple-system, BlinkMacSystemFont, 'Pretendard', sans-serif;
-    }
-    .loader {
+      min-height: 100vh;
+      font-family: -apple-system, BlinkMacSystemFont, 'Pretendard', 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
       text-align: center;
-      color: #2D2D2D;
     }
-    .loader .emoji { font-size: 4rem; }
-    .loader p { margin-top: 1rem; font-size: 0.875rem; opacity: 0.4; }
+    .stage {
+      max-width: 360px;
+      width: 100%;
+    }
+    .emoji {
+      font-size: 72px;
+      line-height: 1;
+      margin-bottom: 16px;
+    }
+    h1 {
+      margin: 0 0 8px;
+      font-size: 20px;
+      font-weight: 700;
+      letter-spacing: -0.4px;
+    }
+    p {
+      margin: 0 0 24px;
+      font-size: 14px;
+      line-height: 1.5;
+      color: rgba(45, 45, 45, 0.65);
+    }
+    button {
+      appearance: none;
+      border: none;
+      background: #7B9E6B;
+      color: #FFF8EB;
+      font-size: 14px;
+      font-weight: 600;
+      letter-spacing: -0.15px;
+      padding: 12px 28px;
+      border-radius: 999px;
+      cursor: pointer;
+      box-shadow: 2px 2px 0 rgba(45, 45, 45, 0.15);
+      transition: transform 0.08s ease;
+    }
+    button:active {
+      transform: translate(1px, 1px);
+      box-shadow: 1px 1px 0 rgba(45, 45, 45, 0.15);
+    }
+    .hint {
+      margin-top: 20px;
+      font-size: 12px;
+      color: rgba(45, 45, 45, 0.4);
+    }
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.05); }
+    }
+    .pulse { animation: pulse 2s ease-in-out infinite; }
   </style>
 </head>
 <body>
-  <div class="loader">
-    <div class="emoji">🫧</div>
-    <p>Loading TerraWorld...</p>
+  <div class="stage">
+    <div class="emoji pulse">🪴</div>
+    <h1>TerraWorld 에 연결 중…</h1>
+    <p id="msg">잠시만 기다려 주세요. 인터넷 연결을 확인하고 있어요.</p>
+    <button id="retry" type="button">다시 시도</button>
+    <div class="hint">연결이 계속 안 되면 Wi-Fi 또는 모바일 데이터를 확인해 주세요.</div>
   </div>
-  <!-- This is a fallback page. In production, the WebView loads the remote URL directly. -->
+  <script>
+    // 이 페이지는 폴백입니다. 실제 앱은 Capacitor WebView가 원격 URL을 직접 로드합니다.
+    // 원격 URL이 응답하지 않을 때 사용자가 멍하게 기다리지 않도록 친절히 안내합니다.
+    var msgEl = document.getElementById('msg');
+    var btn = document.getElementById('retry');
+    function updateOnlineState() {
+      if (navigator.onLine) {
+        msgEl.textContent = '연결되었어요. 잠시 후 자동으로 이동합니다.';
+      } else {
+        msgEl.textContent = '오프라인 상태예요. 인터넷 연결을 확인하고 다시 시도해 주세요.';
+      }
+    }
+    btn.addEventListener('click', function () {
+      // Capacitor가 server.url 을 다시 로드하도록 강제 새로고침
+      window.location.reload();
+    });
+    window.addEventListener('online', updateOnlineState);
+    window.addEventListener('offline', updateOnlineState);
+    updateOnlineState();
+  </script>
 </body>
 </html>
