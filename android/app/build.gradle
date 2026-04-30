@@ -16,10 +16,30 @@ android {
             ignoreAssetsPattern = '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
         }
     }
+    // 서명 설정 — 환경변수로 keystore 정보 주입 (CI / 로컬 release 빌드).
+    // 환경변수가 모두 설정되어 있을 때만 signingConfig 활성화. 누락 시 unsigned AAB.
+    signingConfigs {
+        release {
+            def ksFile = System.getenv('ANDROID_KEYSTORE_FILE')
+            def ksPwd = System.getenv('ANDROID_KEYSTORE_PASSWORD')
+            def alias = System.getenv('ANDROID_KEY_ALIAS')
+            def keyPwd = System.getenv('ANDROID_KEY_PASSWORD')
+            if (ksFile && ksPwd && alias && keyPwd) {
+                storeFile file(ksFile)
+                storePassword ksPwd
+                keyAlias alias
+                keyPassword keyPwd
+            }
+        }
+    }
     buildTypes {
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            // signingConfig 의 storeFile 이 설정된 경우에만 서명 적용
+            if (signingConfigs.release.storeFile != null) {
+                signingConfig signingConfigs.release
+            }
         }
     }
 }
