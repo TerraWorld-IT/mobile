@@ -168,14 +168,13 @@ jobs:
       - name: Capacitor sync
         run: npx cap sync ios
 
-      - name: Install CocoaPods
-        run: cd ios/App && pod install
-
+      # Capacitor 8 부터 Swift Package Manager 사용 — Podfile 없음.
+      # ios/App/CapApp-SPM/Package.swift 가 의존성 정의.
       - name: Build iOS (simulator, no signing)
         run: |
           cd ios/App
           xcodebuild build \
-            -workspace App.xcworkspace \
+            -project App.xcodeproj \
             -scheme App \
             -sdk iphonesimulator \
             -configuration Debug \
