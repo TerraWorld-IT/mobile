@@ -6,6 +6,15 @@ build/
 ios/Pods/
 ios/DerivedData/
 ios/App/App/GoogleService-Info.plist
+# Capacitor 가 `cap sync` 시 webDir(www/) 를 ios/App/App/public 으로 복사한다.
+# 빌드 산출물이므로 git 추적 안 함.
+ios/App/App/public/
+# Xcode user-specific 캐시
+ios/App/App.xcodeproj/xcuserdata/
+ios/App/App.xcodeproj/project.xcworkspace/xcuserdata/
+# SPM build cache
+ios/App/.build/
+ios/App/CapApp-SPM/.build/
 android/app/google-services.json
 *.apk
 *.aab
