@@ -53,6 +53,31 @@ jobs:
           distribution: temurin
           java-version: 21
 
+      - name: Compute version from tag / run number
+        id: version
+        run: |
+          # tag push (refs/tags/v*) 면 semver 에서 versionCode 도출.
+          # workflow_dispatch (no tag) 면 run_number 사용.
+          if [[ "${GITHUB_REF}" == refs/tags/v* ]]; then
+            VERSION_NAME="${GITHUB_REF#refs/tags/v}"
+            MAJOR=$(echo "$VERSION_NAME" | cut -d. -f1)
+            MINOR=$(echo "$VERSION_NAME" | cut -d. -f2)
+            PATCH=$(echo "$VERSION_NAME" | cut -d. -f3 | cut -d- -f1)
+            # versionCode 인코딩: major*10000 + minor*100 + patch (Play Store
+            # 가 monotonic increase 를 요구하므로 단조증가 보장).
+            VERSION_CODE=$((MAJOR * 10000 + MINOR * 100 + PATCH))
+          else
+            # 수동 dispatch — internal QA 빌드. tag 없이 monotonic 보장 위해
+            # GITHUB_RUN_NUMBER 사용. versionName 은 ci.<number> suffix.
+            VERSION_NAME="0.0.0+ci.${GITHUB_RUN_NUMBER}"
+            VERSION_CODE="${GITHUB_RUN_NUMBER}"
+          fi
+          echo "ANDROID_VERSION_CODE=$VERSION_CODE" >> "$GITHUB_ENV"
+          echo "ANDROID_VERSION_NAME=$VERSION_NAME" >> "$GITHUB_ENV"
+          echo "version_code=$VERSION_CODE" >> "$GITHUB_OUTPUT"
+          echo "version_name=$VERSION_NAME" >> "$GITHUB_OUTPUT"
+          echo "::notice::APK versionCode=$VERSION_CODE versionName=$VERSION_NAME"
+
       - name: Check if keystore secret is configured
         id: keystore_check
         run: |
