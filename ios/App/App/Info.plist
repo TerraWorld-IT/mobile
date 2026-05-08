@@ -2,12 +2,12 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-    <key>CAPACITOR_DEBUG</key>
+	<key>CAPACITOR_DEBUG</key>
 	<string>$(CAPACITOR_DEBUG)</string>
 	<key>CFBundleDevelopmentRegion</key>
-	<string>en</string>
+	<string>ko</string>
 	<key>CFBundleDisplayName</key>
-        <string>TerraWorld</string>
+	<string>TerraWorld</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -47,5 +47,45 @@
 	</array>
 	<key>UIViewControllerBasedStatusBarAppearance</key>
 	<true/>
+
+	<!-- 권한 사용 사유 — App Store 심사 시 누락되면 binary reject. 한국어
+	     CFBundleDevelopmentRegion=ko 기준이라 InfoPlist.strings 별도 미사용. -->
+	<key>NSCameraUsageDescription</key>
+	<string>활동 기록 작성 시 사진 촬영을 위해 카메라에 접근합니다. 거부 시 사진 첨부 없이 기록 작성만 가능합니다.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>활동 기록에 첨부할 사진을 사진 보관함에서 불러옵니다. 거부 시 사진 첨부 기능을 사용할 수 없습니다.</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>꾸민 테라리움 화면을 사진 보관함에 저장하기 위해 권한이 필요합니다. 거부해도 앱의 다른 기능에는 영향이 없습니다.</string>
+	<key>NSUserTrackingUsageDescription</key>
+	<string>맞춤형 광고 노출과 광고 보상 기능을 위해 추적 권한을 사용합니다. 거부 시 일반 광고만 노출되며, 보상은 정상 지급됩니다.</string>
+
+	<!-- 보안: 전역 cleartext 차단 + dev 호스트만 예외 허용 -->
+	<key>NSAppTransportSecurity</key>
+	<dict>
+		<key>NSAllowsArbitraryLoads</key>
+		<false/>
+		<key>NSExceptionDomains</key>
+		<dict>
+			<key>localhost</key>
+			<dict>
+				<key>NSExceptionAllowsInsecureHTTPLoads</key>
+				<true/>
+			</dict>
+		</dict>
+	</dict>
+
+	<!-- 딥링크: terraworld.app/share/* — Universal Links. associated-domains
+	     entitlement 도 동시 활성화 필요 (App.entitlements 참조). -->
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>app.terraworld.mobile</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>terraworld</string>
+			</array>
+		</dict>
+	</array>
 </dict>
 </plist>
