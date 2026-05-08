@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!--
+		Universal Links — apple-app-site-association 파일을
+		https://terraworld.app/.well-known/apple-app-site-association 에
+		배포해야 동작. webcredentials 도 동일 도메인 사용.
+	-->
+	<key>com.apple.developer.associated-domains</key>
+	<array>
+		<string>applinks:terraworld.app</string>
+	</array>
+	<!-- 푸시 알림 권한 — APNs 발송용 (FCM 도 APNs 의존). -->
+	<key>aps-environment</key>
+	<string>production</string>
+</dict>
+</plist>

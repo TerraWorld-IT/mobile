@@ -1,0 +1,7 @@
+// SEC-011: release 빌드는 CAPACITOR_DEBUG=false 강제.
+// 빠지면 Info.plist 의 $(CAPACITOR_DEBUG) 가 빈 문자열로 해석되어
+// Capacitor 의 remote inspector / debug WebView 가 release IPA 에 포함될 위험.
+//
+// Xcode 프로젝트 build settings 에서 release configuration 의
+// `Configuration Settings File` 을 본 파일로 지정해야 효과 있음.
+CAPACITOR_DEBUG = false

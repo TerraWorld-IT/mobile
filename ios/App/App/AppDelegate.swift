@@ -33,16 +33,35 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         // Called when the application is about to terminate. Save data if appropriate. See also applicationDidEnterBackground:.
     }
 
+    /// URL scheme allowlist (SEC-010): 임의 scheme/host 가 그대로 Capacitor 로
+    /// 전달되지 않도록 검증.
+    ///   - "terraworld"  : Info.plist CFBundleURLTypes 에 등록된 custom scheme
+    ///   - "https"+host  : Universal Link (associated-domains entitlement)
+    private static let allowedSchemes: Set<String> = ["terraworld", "https"]
+    private static let allowedHosts: Set<String> = ["terraworld.app"]
+
     func application(_ app: UIApplication, open url: URL, options: [UIApplication.OpenURLOptionsKey: Any] = [:]) -> Bool {
-        // Called when the app was launched with a url. Feel free to add additional processing here,
-        // but if you want the App API to support tracking app url opens, make sure to keep this call
+        guard let scheme = url.scheme?.lowercased(), Self.allowedSchemes.contains(scheme) else {
+            NSLog("AppDelegate: rejected url scheme=\(url.scheme ?? "nil")")
+            return false
+        }
+        if scheme == "https" {
+            guard let host = url.host?.lowercased(), Self.allowedHosts.contains(host) else {
+                NSLog("AppDelegate: rejected https deeplink host=\(url.host ?? "nil")")
+                return false
+            }
+        }
         return ApplicationDelegateProxy.shared.application(app, open: url, options: options)
     }
 
     func application(_ application: UIApplication, continue userActivity: NSUserActivity, restorationHandler: @escaping ([UIUserActivityRestoring]?) -> Void) -> Bool {
-        // Called when the app was launched with an activity, including Universal Links.
-        // Feel free to add additional processing here, but if you want the App API to support
-        // tracking app url opens, make sure to keep this call
+        // Universal Link 진입 — host allowlist 통과 시에만 Capacitor 로 위임.
+        if userActivity.activityType == NSUserActivityTypeBrowsingWeb,
+           let host = userActivity.webpageURL?.host?.lowercased(),
+           !Self.allowedHosts.contains(host) {
+            NSLog("AppDelegate: rejected universal link host=\(host)")
+            return false
+        }
         return ApplicationDelegateProxy.shared.application(application, continue: userActivity, restorationHandler: restorationHandler)
     }
 
