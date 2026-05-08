@@ -44,7 +44,12 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Capacitor sync
+      - name: Capacitor sync (production)
+        # NODE_ENV=production 으로 capacitor.config.ts 의 isDev 분기를 production
+        # 으로 강제 → server.url 이 https://terraworld.app 로 sync, cleartext: false.
+        # 이게 빠지면 release AAB 가 dev 호스트 (10.0.2.2:3000) 박힌 채 서명됨.
+        env:
+          NODE_ENV: production
         run: npx cap sync android
 
       - name: Setup Java
@@ -56,19 +61,28 @@ jobs:
       - name: Compute version from tag / run number
         id: version
         run: |
-          # tag push (refs/tags/v*) 면 semver 에서 versionCode 도출.
-          # workflow_dispatch (no tag) 면 run_number 사용.
+          # versionCode 인코딩 정책 (Play Store 가 monotonic increase 강제)
+          #   - tag (refs/tags/vMAJOR.MINOR.PATCH): MAJOR*1_000_000 + MINOR*1000 + PATCH
+          #     → MINOR 0..999, PATCH 0..999 까지 안전 (이전 *10000+*100+ 공식은
+          #     PATCH=100 시 MINOR+1 와 충돌). 또한 dispatch run 보다 항상 큰 값을
+          #     보장하기 위해 +10_000_000 offset.
+          #   - workflow_dispatch (no tag): GITHUB_RUN_NUMBER 그대로 — 단조증가.
           if [[ "${GITHUB_REF}" == refs/tags/v* ]]; then
             VERSION_NAME="${GITHUB_REF#refs/tags/v}"
             MAJOR=$(echo "$VERSION_NAME" | cut -d. -f1)
             MINOR=$(echo "$VERSION_NAME" | cut -d. -f2)
             PATCH=$(echo "$VERSION_NAME" | cut -d. -f3 | cut -d- -f1)
-            # versionCode 인코딩: major*10000 + minor*100 + patch (Play Store
-            # 가 monotonic increase 를 요구하므로 단조증가 보장).
-            VERSION_CODE=$((MAJOR * 10000 + MINOR * 100 + PATCH))
+            # 정수 검증 — semver 가 깨진 tag 가 push 되면 빌드 fail.
+            if ! [[ "$MAJOR" =~ ^[0-9]+$ && "$MINOR" =~ ^[0-9]+$ && "$PATCH" =~ ^[0-9]+$ ]]; then
+              echo "::error::malformed semver tag: $VERSION_NAME (expected vMAJOR.MINOR.PATCH integers)"
+              exit 1
+            fi
+            if [[ "$MINOR" -gt 999 || "$PATCH" -gt 999 ]]; then
+              echo "::error::MINOR or PATCH > 999 — versionCode encoding overflow ($VERSION_NAME)"
+              exit 1
+            fi
+            VERSION_CODE=$((10000000 + MAJOR * 1000000 + MINOR * 1000 + PATCH))
           else
-            # 수동 dispatch — internal QA 빌드. tag 없이 monotonic 보장 위해
-            # GITHUB_RUN_NUMBER 사용. versionName 은 ci.<number> suffix.
             VERSION_NAME="0.0.0+ci.${GITHUB_RUN_NUMBER}"
             VERSION_CODE="${GITHUB_RUN_NUMBER}"
           fi
@@ -88,19 +102,23 @@ jobs:
             echo "::warning::ANDROID_KEYSTORE_BASE64 secret 이 없어 unsigned AAB 만 생성됩니다."
           fi
 
-      - name: Decode signing keystore
+      - name: Decode signing keystore (file only)
         if: steps.keystore_check.outputs.has_keystore == 'true'
+        env:
+          KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
         run: |
+          # base64 decode 만 처리. password / alias 는 step-level env 로만 전파해서
+          # subsequent step (artifact upload, action-gh-release 등) 에 누수 방지.
           mkdir -p android/app/keystore
-          echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 -d > android/app/keystore/release.keystore
-          {
-            echo "ANDROID_KEYSTORE_FILE=keystore/release.keystore"
-            echo "ANDROID_KEYSTORE_PASSWORD=${{ secrets.ANDROID_KEYSTORE_PASSWORD }}"
-            echo "ANDROID_KEY_ALIAS=${{ secrets.ANDROID_KEY_ALIAS }}"
-            echo "ANDROID_KEY_PASSWORD=${{ secrets.ANDROID_KEY_PASSWORD }}"
-          } >> "$GITHUB_ENV"
+          printf '%s' "$KEYSTORE_BASE64" | base64 -d > android/app/keystore/release.keystore
+          echo "ANDROID_KEYSTORE_FILE=keystore/release.keystore" >> "$GITHUB_ENV"
 
       - name: Build release AAB
+        env:
+          # 비밀번호 / alias 는 본 step 에서만 노출. $GITHUB_ENV 에 안 박힘.
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
         run: cd android && ./gradlew bundleRelease
 
       - name: Locate AAB
@@ -122,7 +140,12 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           files: ${{ steps.locate_aab.outputs.aab_path }}
-          body: ${{ github.event.inputs.release_notes }}
+          # release_notes 는 attacker-controlled 가능 (workflow_dispatch) →
+          # ${{ }} 직접 보간 대신 env 로 wrap 해 markdown injection 영향 최소화.
+          # tag push 시에는 input 부재 → env 값 빈 문자열, generate_release_notes
+          # 가 자동으로 changelog 생성.
+          body: ${{ env.RELEASE_NOTES_BODY }}
           generate_release_notes: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_NOTES_BODY: ${{ github.event.inputs.release_notes }}

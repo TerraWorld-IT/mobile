@@ -3,7 +3,23 @@ apply plugin: 'com.android.application'
 // release.yml 의 'Compute version from tag' step 이 ANDROID_VERSION_CODE /
 // ANDROID_VERSION_NAME 환경변수를 채우면 본 값으로 빌드. 미설정 시 (로컬
 // debug 빌드) 기본값 1 / "1.0" 으로 폴백.
-def computedVersionCode = (System.getenv('ANDROID_VERSION_CODE') ?: '1').toInteger()
+//
+// 환경변수가 비숫자일 때는 cryptic NumberFormatException 대신 명시적
+// GradleException 으로 실패 — release engineer 가 release.yml 의 'Compute
+// version from tag / run number' step 출력을 즉시 확인하도록 메시지 제공.
+def rawVersionCode = System.getenv('ANDROID_VERSION_CODE')
+def computedVersionCode
+if (rawVersionCode == null || rawVersionCode.isEmpty()) {
+    computedVersionCode = 1
+} else if (rawVersionCode.isInteger()) {
+    computedVersionCode = rawVersionCode.toInteger()
+} else {
+    throw new GradleException(
+        "ANDROID_VERSION_CODE='${rawVersionCode}' is not an integer. " +
+        "Expected a positive versionCode (e.g. 10010001). Check release.yml " +
+        "'Compute version from tag / run number' step output.",
+    )
+}
 def computedVersionName = System.getenv('ANDROID_VERSION_NAME') ?: '1.0'
 
 android {
