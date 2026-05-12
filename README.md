@@ -64,7 +64,17 @@ git push origin v1.0.0
 
 [`capacitor.config.ts`](capacitor.config.ts) — appId, webDir, server.url(원격 콘텐츠), 활성화 plugin (Splash/StatusBar/Keyboard/Push/AdMob).
 
-dev 모드는 Android 에뮬레이터에서 호스트 머신 PC 의 Nuxt dev 서버 (`http://10.0.2.2:3000`) 를 로드. 실기기에서는 LAN IP 로 변경.
+dev 모드 (`NODE_ENV !== 'production'`) 는 기본적으로 Android 에뮬레이터의 호스트 alias (`http://10.0.2.2:3000`) 를 로드. iOS 시뮬레이터·실기기·LAN 환경은 `CAP_DEV_URL` 환경변수로 override:
+
+```bash
+# iOS 시뮬레이터 — host 와 동일 네트워크
+CAP_DEV_URL=http://localhost:3000 npx cap sync ios
+
+# 실기기 (Android/iOS) — PC LAN IP 지정
+CAP_DEV_URL=http://192.168.1.42:3000 npx cap sync
+```
+
+env 미지정 시 기존 동작 (`10.0.2.2:3000`) 유지 — backwards compatible.
 
 ## 네이티브 plugin
 
