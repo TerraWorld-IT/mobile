@@ -2,6 +2,13 @@ import type { CapacitorConfig } from '@capacitor/cli'
 
 const isDev = process.env.NODE_ENV !== 'production'
 
+// Dev URL 우선순위:
+//   1) CAP_DEV_URL 환경변수 (iOS sim → localhost / 실기기 → LAN IP / Android 에뮬 → 10.0.2.2)
+//   2) 기본값 10.0.2.2:3000 (Android 에뮬레이터 호스트 alias)
+// iOS 시뮬레이터는 host machine 과 동일 네트워크이므로 localhost 가 동작한다.
+// 실기기는 PC LAN IP (예: CAP_DEV_URL=http://192.168.1.42:3000) 를 지정.
+const devUrl = process.env.CAP_DEV_URL ?? 'http://10.0.2.2:3000'
+
 const config: CapacitorConfig = {
   appId: 'app.terraworld.mobile',
   appName: 'TerraWorld',
@@ -10,11 +17,7 @@ const config: CapacitorConfig = {
   // Remote URL — WebView loads the deployed web app directly.
   // Web code updates deploy instantly without app store re-submission.
   server: {
-    // Dev: 10.0.2.2 is Android emulator's alias for host machine localhost
-    // For real device, use your machine's LAN IP (e.g., 192.168.x.x:3000)
-    url: isDev
-      ? 'http://10.0.2.2:3000'
-      : 'https://terraworld.app',
+    url: isDev ? devUrl : 'https://terraworld.app',
     cleartext: isDev, // Allow HTTP in dev mode
   },
 
