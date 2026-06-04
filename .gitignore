@@ -21,3 +21,8 @@ android/app/google-services.json
 *.ipa
 .env
 .env.*
+# UltraPlan H6 — capacitor.config.json 은 SoT 가 아님 (capacitor.config.ts 가 SoT).
+# cap sync 도중 또는 누군가 수기로 .json 생성 시 dev-state (cleartext=true, server.url=
+# 10.0.2.2, AdMob test ID) 가 release 빌드에 박힐 위험 — preventive ignore.
+capacitor.config.json
+

@@ -1,0 +1,35 @@
+# UltraPlan code-review SEC-201/202 + Cost disagree 절충 —
+# 3rd-party GitHub Actions 의 SHA pin 대신 dependabot 자동 갱신 도입.
+# first-party `actions/*` 는 major tag float 유지 (관리 부담 회피).
+version: 2
+updates:
+  - package-ecosystem: 'github-actions'
+    directory: '/'
+    schedule:
+      interval: 'weekly'
+      day: 'monday'
+    open-pull-requests-limit: 3
+    labels: ['dependencies', 'github-actions']
+    # 3rd-party action 만 PR 생성, first-party 는 ignore (관리 부담 절감)
+    # 참고: dependabot 의 default 동작은 모든 action update 이므로
+    # ignore 패턴 사용. 추후 first-party 도 PR 필요 시 ignore 행 제거.
+    ignore:
+      - dependency-name: 'actions/checkout'
+      - dependency-name: 'actions/setup-node'
+      - dependency-name: 'actions/setup-java'
+      - dependency-name: 'actions/upload-artifact'
+      - dependency-name: 'actions/setup-python'
+  - package-ecosystem: 'npm'
+    directory: '/'
+    schedule:
+      interval: 'weekly'
+      day: 'tuesday'
+    open-pull-requests-limit: 5
+    labels: ['dependencies', 'npm']
+    # Capacitor stack 의 minor/patch 자동 — frontend 와 sync 필요 (M12 check-capacitor-sync.mjs 가 검출)
+  - package-ecosystem: 'gradle'
+    directory: '/android'
+    schedule:
+      interval: 'monthly'
+    open-pull-requests-limit: 2
+    labels: ['dependencies', 'android-gradle']

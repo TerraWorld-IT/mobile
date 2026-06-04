@@ -1,1 +1,4 @@
 CAPACITOR_DEBUG = true
+
+// UltraPlan M4 — AdMob test App ID (debug 빌드).
+ADMOB_APP_ID = ca-app-pub-3940256099942544~1458002511

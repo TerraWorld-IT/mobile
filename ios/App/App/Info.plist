@@ -87,5 +87,10 @@
 			</array>
 		</dict>
 	</array>
+
+	<!-- UltraPlan M4 — AdMob App ID. release.xcconfig 의 ADMOB_APP_ID 변수를 치환.
+	     CI 가 secret 으로 real ID 주입, 미주입 시 release.xcconfig 의 test ID fallback. -->
+	<key>GADApplicationIdentifier</key>
+	<string>$(ADMOB_APP_ID)</string>
 </dict>
 </plist>

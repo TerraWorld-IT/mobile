@@ -1,0 +1,17 @@
+{
+  "_comment": "UltraPlan M12 fixture — check-capacitor-sync.mjs 의 fail 경로 검증용. 본 fixture 로 호출 시 exit 1 기대 (mismatch + frontend-only 동시 trigger).",
+  "frontend": {
+    "@capacitor/core": "^8.3.0",
+    "@capacitor/app": "^8.0.5",
+    "@capacitor/camera": "^8.0.2",
+    "@capacitor/ghost-plugin": "^8.0.0"
+  },
+  "mobile": {
+    "@capacitor/core": "^8.3.0",
+    "@capacitor/app": "^8.1.0",
+    "@capacitor/camera": "^8.0.2",
+    "@capacitor/cli": "^8.3.0",
+    "@capacitor/android": "^8.3.0",
+    "@capacitor/ios": "^8.3.0"
+  }
+}

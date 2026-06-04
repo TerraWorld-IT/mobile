@@ -12,8 +12,10 @@ const config: CapacitorConfig = {
   server: {
     // Dev: 10.0.2.2 is Android emulator's alias for host machine localhost
     // For real device, use your machine's LAN IP (e.g., 192.168.x.x:3000)
+    // Dev: 기본은 Android 에뮬레이터의 호스트 alias(10.0.2.2). 실기기 테스트 시
+    // MOBILE_SERVER_URL=http://<PC-LAN-IP>:3000 으로 오버라이드 (예: 192.168.0.10:3000).
     url: isDev
-      ? 'http://10.0.2.2:3000'
+      ? (process.env.MOBILE_SERVER_URL ?? 'http://10.0.2.2:3000')
       : 'https://terraworld.app',
     cleartext: isDev, // Allow HTTP in dev mode
   },

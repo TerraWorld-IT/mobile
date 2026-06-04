@@ -149,3 +149,149 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           RELEASE_NOTES_BODY: ${{ github.event.inputs.release_notes }}
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # UltraPlan M15 — iOS Release (TestFlight 업로드)
+  # ─────────────────────────────────────────────────────────────────────────
+  # 필요한 GitHub Secrets:
+  #   APPLE_API_KEY_ID         — App Store Connect API Key ID (10자, 예: ABCD1234EF)
+  #   APPLE_API_ISSUER_ID      — Issuer ID (UUID)
+  #   APPLE_API_KEY_P8_BASE64  — `base64 -w0 AuthKey_*.p8` 결과
+  #   IOS_TEAM_ID              — Apple Developer Team ID (Universal Links 와 동일)
+  #
+  # Secrets 가 없으면 build only 모드 (TestFlight upload skip).
+  # 본 job 은 runs-on: macos-latest 필수.
+  ios-release:
+    name: iOS Release (xcodebuild archive + TestFlight)
+    runs-on: macos-latest
+    timeout-minutes: 60
+    # 본 job 은 macos runner 비용 큼 — tag push 시에만 실행 (workflow_dispatch 제외)
+    if: startsWith(github.ref, 'refs/tags/v')
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install deps
+        run: npm ci
+
+      - name: Capacitor sync (production)
+        env:
+          NODE_ENV: production
+        run: npx cap sync ios
+
+      - name: Extract version from tag
+        id: ver
+        # tag = v1.2.3 → MARKETING_VERSION=1.2.3, CURRENT_PROJECT_VERSION=run_number
+        # SEC-206: Android tag 와 동일한 semver 검증 추가 (parity)
+        run: |
+          TAG="${GITHUB_REF#refs/tags/v}"
+          # SEC-206 + Codex MEDIUM 2: `$` 끝 앵커로 pre-release tag (1.2.3-rc1) 차단.
+          # Android 의 cut -d- -f1 패턴은 pre-release 허용 — 정책 차이 명시 (별 cycle 통일 권고).
+          if ! [[ "$TAG" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::error::malformed semver tag for iOS: $TAG (expected MAJOR.MINOR.PATCH integers, no pre-release suffix)"
+            exit 1
+          fi
+          echo "marketing=${TAG}" >> "$GITHUB_OUTPUT"
+          echo "current_project=${GITHUB_RUN_NUMBER}" >> "$GITHUB_OUTPUT"
+
+      - name: Apply version (xcrun agvtool)
+        working-directory: ios/App
+        run: |
+          xcrun agvtool new-marketing-version "${{ steps.ver.outputs.marketing }}"
+          xcrun agvtool new-version -all "${{ steps.ver.outputs.current_project }}"
+
+      - name: Verify secrets
+        id: secrets_check
+        run: |
+          if [ -n "${{ secrets.APPLE_API_KEY_ID }}" ] && [ -n "${{ secrets.APPLE_API_ISSUER_ID }}" ] && [ -n "${{ secrets.APPLE_API_KEY_P8_BASE64 }}" ]; then
+            echo "has_apple_key=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_apple_key=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::APPLE_API_* secrets 부재 — build only 모드, TestFlight upload skip"
+          fi
+
+      - name: Decode Apple API key
+        if: steps.secrets_check.outputs.has_apple_key == 'true'
+        env:
+          APPLE_API_KEY_P8: ${{ secrets.APPLE_API_KEY_P8_BASE64 }}
+          APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
+        run: |
+          mkdir -p ~/private_keys
+          printf '%s' "$APPLE_API_KEY_P8" | base64 -d > ~/private_keys/AuthKey_${APPLE_API_KEY_ID}.p8
+
+      - name: Archive (xcodebuild)
+        working-directory: ios/App
+        env:
+          # Automatic signing 사용 — App Store Connect API key 가 provisioning 자동 생성
+          APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
+          APPLE_API_ISSUER_ID: ${{ secrets.APPLE_API_ISSUER_ID }}
+        run: |
+          xcodebuild archive \
+            -workspace App.xcworkspace \
+            -scheme App \
+            -configuration Release \
+            -archivePath build/App.xcarchive \
+            -allowProvisioningUpdates \
+            ${APPLE_API_KEY_ID:+-authenticationKeyID "$APPLE_API_KEY_ID"} \
+            ${APPLE_API_ISSUER_ID:+-authenticationKeyIssuerID "$APPLE_API_ISSUER_ID"} \
+            ${APPLE_API_KEY_ID:+-authenticationKeyPath "$HOME/private_keys/AuthKey_${APPLE_API_KEY_ID}.p8"}
+
+      - name: Export IPA
+        if: steps.secrets_check.outputs.has_apple_key == 'true'
+        working-directory: ios/App
+        env:
+          APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
+          APPLE_API_ISSUER_ID: ${{ secrets.APPLE_API_ISSUER_ID }}
+        run: |
+          cat > ExportOptions.plist <<'PLIST'
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+            <key>method</key>
+            <string>app-store</string>
+            <key>uploadBitcode</key>
+            <false/>
+            <key>uploadSymbols</key>
+            <true/>
+            <key>signingStyle</key>
+            <string>automatic</string>
+          </dict>
+          </plist>
+          PLIST
+          xcodebuild -exportArchive \
+            -archivePath build/App.xcarchive \
+            -exportPath build/ \
+            -exportOptionsPlist ExportOptions.plist \
+            -allowProvisioningUpdates \
+            -authenticationKeyID "$APPLE_API_KEY_ID" \
+            -authenticationKeyIssuerID "$APPLE_API_ISSUER_ID" \
+            -authenticationKeyPath "$HOME/private_keys/AuthKey_${APPLE_API_KEY_ID}.p8"
+
+      - name: Upload to TestFlight (xcrun altool)
+        if: steps.secrets_check.outputs.has_apple_key == 'true'
+        working-directory: ios/App
+        env:
+          APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
+          APPLE_API_ISSUER_ID: ${{ secrets.APPLE_API_ISSUER_ID }}
+        run: |
+          IPA=$(find build -name "*.ipa" | head -1)
+          xcrun altool --upload-app \
+            --type ios \
+            --file "$IPA" \
+            --apiKey "$APPLE_API_KEY_ID" \
+            --apiIssuer "$APPLE_API_ISSUER_ID"
+
+      - name: Upload IPA artifact (always)
+        if: steps.secrets_check.outputs.has_apple_key == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-release-ipa
+          path: ios/App/build/*.ipa
+          retention-days: 30
