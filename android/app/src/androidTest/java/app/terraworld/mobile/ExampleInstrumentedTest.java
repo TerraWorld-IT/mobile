@@ -1,4 +1,4 @@
-package com.getcapacitor.myapp;
+package app.terraworld.mobile;
 
 import static org.junit.Assert.*;
 
