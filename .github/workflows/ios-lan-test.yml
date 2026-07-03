@@ -52,6 +52,19 @@ jobs:
       - name: Install deps
         run: npm ci
 
+      # Apple 은 iOS 26 SDK(Xcode 26+) 이상으로 빌드된 앱만 App Store Connect 업로드 허용.
+      # macos-latest 기본 Xcode 가 16.x 일 수 있어 명시적으로 26.x 를 선택한다.
+      - name: Select Xcode 26 (iOS 26 SDK 필수)
+        run: |
+          XC=$(ls -d /Applications/Xcode_26*.app 2>/dev/null | sort -V | tail -1)
+          if [ -z "$XC" ]; then
+            echo "::error::Xcode 26 미설치 — 사용 가능 Xcode 목록:"; ls -d /Applications/Xcode_*.app || true
+            exit 1
+          fi
+          sudo xcode-select -s "$XC/Contents/Developer"
+          echo "selected: $XC"
+          xcodebuild -version
+
       # dev 모드(NODE_ENV 미설정) → capacitor.config.ts 가 isDev=true 로 판단하여
       # server.url = MOBILE_SERVER_URL, cleartext=true 로 baking.
       - name: Capacitor sync (LAN dev server)
