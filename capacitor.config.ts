@@ -14,9 +14,11 @@ const config: CapacitorConfig = {
     // For real device, use your machine's LAN IP (e.g., 192.168.x.x:3000)
     // Dev: 기본은 Android 에뮬레이터의 호스트 alias(10.0.2.2). 실기기 테스트 시
     // MOBILE_SERVER_URL=http://<PC-LAN-IP>:3000 으로 오버라이드 (예: 192.168.0.10:3000).
+    // 프로덕션 URL 도 env 로 파라미터화 — 배포 도메인(web-qplay.kr 서브도메인)을
+    // 빌드타임에 MOBILE_PROD_URL 로 주입. 미설정 시 terraworld.app fallback.
     url: isDev
       ? (process.env.MOBILE_SERVER_URL ?? 'http://10.0.2.2:3000')
-      : 'https://terraworld.app',
+      : (process.env.MOBILE_PROD_URL ?? 'https://terraworld.app'),
     cleartext: isDev, // Allow HTTP in dev mode
   },
 
