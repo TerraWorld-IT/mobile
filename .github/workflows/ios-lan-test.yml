@@ -1,0 +1,170 @@
+name: iOS LAN Test (TestFlight)
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 로컬 LAN 서버(개발 PC)를 가리키는 네이티브 iOS 테스트 빌드 → TestFlight 업로드.
+# release.yml(프로덕션, tag v* + https://terraworld.app) 과 분리된 수동 테스트 경로.
+#
+# 앱은 원격 WebView 셸이라 server.url 이 빌드 타임에 baking 됨. 여기서는 dev 모드
+# (NODE_ENV 미설정)로 cap sync 하여 MOBILE_SERVER_URL(기본=개발 PC LAN)을 baking.
+# → 설치한 아이폰이 개발 PC 와 같은 WiFi 일 때만 동작(집 밖/셀룰러 X). Info.plist 의
+#   NSAllowsLocalNetworking=true 로 사설망 cleartext 허용됨.
+#
+# 필요한 GitHub Secrets (Settings → Secrets and variables → Actions):
+#   APPLE_API_KEY_ID         — App Store Connect API Key ID (10자)
+#   APPLE_API_ISSUER_ID      — Issuer ID (UUID)
+#   APPLE_API_KEY_P8_BASE64  — `base64 -w0 AuthKey_XXXX.p8` 결과 문자열
+#   APPLE_TEAM_ID (선택)      — Apple Developer Team ID (10자). 멀티팀 계정이면 필수.
+#
+# 선행 조건: App Store Connect 에 bundle id `app.terraworld.mobile` 앱 레코드 존재 +
+#            내부 테스터로 본인 Apple ID 등록. (docs 가이드 참조)
+# ─────────────────────────────────────────────────────────────────────────────
+
+on:
+  workflow_dispatch:
+    inputs:
+      server_url:
+        description: '개발 PC LAN 서버 URL (WebView 가 로드할 주소)'
+        required: true
+        default: 'http://192.168.79.119:3000'
+
+concurrency:
+  group: ios-lan-test
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  ios-testflight:
+    name: iOS LAN build → TestFlight
+    runs-on: macos-latest
+    timeout-minutes: 60
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'npm'
+
+      - name: Install deps
+        run: npm ci
+
+      # dev 모드(NODE_ENV 미설정) → capacitor.config.ts 가 isDev=true 로 판단하여
+      # server.url = MOBILE_SERVER_URL, cleartext=true 로 baking.
+      - name: Capacitor sync (LAN dev server)
+        env:
+          MOBILE_SERVER_URL: ${{ github.event.inputs.server_url }}
+        run: |
+          echo "Baking server.url = $MOBILE_SERVER_URL"
+          npx cap sync ios
+          echo "--- generated capacitor.config.json (server) ---"
+          node -e "const c=require('./ios/App/App/capacitor.config.json');console.log(JSON.stringify(c.server))" || true
+
+      - name: Verify Apple secrets present
+        run: |
+          missing=0
+          for v in APPLE_API_KEY_ID APPLE_API_ISSUER_ID APPLE_API_KEY_P8_BASE64; do
+            if [ -z "$(eval echo \$$v)" ]; then echo "::error::secret $v 누락"; missing=1; fi
+          done
+          [ "$missing" = "1" ] && { echo "::error::필수 Apple secrets 부재 — TestFlight 업로드 불가. README/가이드 참조."; exit 1; } || true
+        env:
+          APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
+          APPLE_API_ISSUER_ID: ${{ secrets.APPLE_API_ISSUER_ID }}
+          APPLE_API_KEY_P8_BASE64: ${{ secrets.APPLE_API_KEY_P8_BASE64 }}
+
+      - name: Apply version (xcrun agvtool)
+        working-directory: ios/App
+        run: |
+          xcrun agvtool new-marketing-version "0.0.1"
+          # 빌드 번호는 매 업로드마다 증가해야 함 → run_number 사용
+          xcrun agvtool new-version -all "${GITHUB_RUN_NUMBER}"
+
+      - name: Decode Apple API key
+        env:
+          APPLE_API_KEY_P8: ${{ secrets.APPLE_API_KEY_P8_BASE64 }}
+          APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
+        run: |
+          mkdir -p ~/private_keys
+          printf '%s' "$APPLE_API_KEY_P8" | base64 -d > ~/private_keys/AuthKey_${APPLE_API_KEY_ID}.p8
+
+      - name: Archive (xcodebuild, automatic signing via ASC API key)
+        working-directory: ios/App
+        env:
+          APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
+          APPLE_API_ISSUER_ID: ${{ secrets.APPLE_API_ISSUER_ID }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          # Capacitor 8 = SPM(비-CocoaPods) → App.xcworkspace 없음. -project App.xcodeproj 사용.
+          xcodebuild archive \
+            -project App.xcodeproj \
+            -scheme App \
+            -configuration Release \
+            -archivePath build/App.xcarchive \
+            -allowProvisioningUpdates \
+            ${APPLE_TEAM_ID:+DEVELOPMENT_TEAM="$APPLE_TEAM_ID"} \
+            -authenticationKeyID "$APPLE_API_KEY_ID" \
+            -authenticationKeyIssuerID "$APPLE_API_ISSUER_ID" \
+            -authenticationKeyPath "$HOME/private_keys/AuthKey_${APPLE_API_KEY_ID}.p8"
+
+      - name: Export IPA (app-store)
+        working-directory: ios/App
+        env:
+          APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
+          APPLE_API_ISSUER_ID: ${{ secrets.APPLE_API_ISSUER_ID }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          TEAM_XML=""
+          if [ -n "$APPLE_TEAM_ID" ]; then
+            TEAM_XML="<key>teamID</key><string>$APPLE_TEAM_ID</string>"
+          fi
+          cat > ExportOptions.plist <<PLIST
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+            <key>method</key>
+            <string>app-store</string>
+            <key>uploadBitcode</key>
+            <false/>
+            <key>uploadSymbols</key>
+            <true/>
+            <key>signingStyle</key>
+            <string>automatic</string>
+            ${TEAM_XML}
+          </dict>
+          </plist>
+          PLIST
+          xcodebuild -exportArchive \
+            -archivePath build/App.xcarchive \
+            -exportPath build/ \
+            -exportOptionsPlist ExportOptions.plist \
+            -allowProvisioningUpdates \
+            -authenticationKeyID "$APPLE_API_KEY_ID" \
+            -authenticationKeyIssuerID "$APPLE_API_ISSUER_ID" \
+            -authenticationKeyPath "$HOME/private_keys/AuthKey_${APPLE_API_KEY_ID}.p8"
+
+      - name: Upload to TestFlight (xcrun altool)
+        working-directory: ios/App
+        env:
+          APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
+          APPLE_API_ISSUER_ID: ${{ secrets.APPLE_API_ISSUER_ID }}
+        run: |
+          IPA=$(find build -name "*.ipa" | head -1)
+          echo "Uploading $IPA to TestFlight..."
+          xcrun altool --upload-app \
+            --type ios \
+            --file "$IPA" \
+            --apiKey "$APPLE_API_KEY_ID" \
+            --apiIssuer "$APPLE_API_ISSUER_ID"
+
+      - name: Upload IPA artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-lan-test-ipa
+          path: ios/App/build/*.ipa
+          if-no-files-found: ignore
+          retention-days: 14
