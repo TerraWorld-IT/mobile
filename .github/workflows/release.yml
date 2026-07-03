@@ -180,9 +180,22 @@ jobs:
       - name: Install deps
         run: npm ci
 
+      # Apple 은 iOS 26 SDK(Xcode 26+)로 빌드된 앱만 App Store Connect 업로드 허용.
+      - name: Select Xcode 26 (iOS 26 SDK 필수)
+        run: |
+          XC=$(ls -d /Applications/Xcode_26*.app 2>/dev/null | sort -V | tail -1)
+          if [ -z "$XC" ]; then
+            echo "::error::Xcode 26 미설치 — 사용 가능:"; ls -d /Applications/Xcode_*.app || true; exit 1
+          fi
+          sudo xcode-select -s "$XC/Contents/Developer"
+          xcodebuild -version
+
       - name: Capacitor sync (production)
         env:
           NODE_ENV: production
+          # 프로덕션 배포 도메인(web-qplay.kr 서브도메인)을 빌드타임 주입.
+          # repo variable MOBILE_PROD_URL 미설정 시 terraworld.app fallback.
+          MOBILE_PROD_URL: ${{ vars.MOBILE_PROD_URL }}
         run: npx cap sync ios
 
       - name: Extract version from tag
@@ -228,16 +241,21 @@ jobs:
       - name: Archive (xcodebuild)
         working-directory: ios/App
         env:
-          # Automatic signing 사용 — App Store Connect API key 가 provisioning 자동 생성
+          # Automatic signing — ASC API key 가 provisioning 자동 생성 (팀에 기기 1대 등록 필요).
+          # signed archive 여야 embedded framework(GoogleMobileAds 등)도 서명됨 → altool 90035 회피.
           APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
           APPLE_API_ISSUER_ID: ${{ secrets.APPLE_API_ISSUER_ID }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
         run: |
+          # Capacitor 8 = SPM(비-CocoaPods) → App.xcworkspace 없음. -project App.xcodeproj.
           xcodebuild archive \
-            -workspace App.xcworkspace \
+            -project App.xcodeproj \
             -scheme App \
             -configuration Release \
             -archivePath build/App.xcarchive \
+            -destination 'generic/platform=iOS' \
             -allowProvisioningUpdates \
+            ${APPLE_TEAM_ID:+DEVELOPMENT_TEAM="$APPLE_TEAM_ID"} \
             ${APPLE_API_KEY_ID:+-authenticationKeyID "$APPLE_API_KEY_ID"} \
             ${APPLE_API_ISSUER_ID:+-authenticationKeyIssuerID "$APPLE_API_ISSUER_ID"} \
             ${APPLE_API_KEY_ID:+-authenticationKeyPath "$HOME/private_keys/AuthKey_${APPLE_API_KEY_ID}.p8"}
