@@ -90,12 +90,15 @@ jobs:
           mkdir -p ~/private_keys
           printf '%s' "$APPLE_API_KEY_P8" | base64 -d > ~/private_keys/AuthKey_${APPLE_API_KEY_ID}.p8
 
-      # 서명 없이 archive → export 단계에서 App Store(Distribution) 서명.
-      # Distribution profile 은 기기 등록이 불필요하므로 automatic-Development 의
-      # "no devices" 오류를 회피한다 (CI App Store 표준 패턴).
-      - name: Archive (unsigned)
+      # automatic 서명으로 archive(모든 embedded framework 서명됨) → export 에서
+      # Distribution 재서명. GoogleMobileAds 등 동적 framework 는 archive 시 서명돼야
+      # export 재서명 대상이 됨(무서명 archive 는 framework 서명 누락 → altool 90035).
+      # 단 automatic archive 는 Development profile 을 만들며 기기 1대 등록이 필요함.
+      - name: Archive (signed, automatic via ASC API key)
         working-directory: ios/App
         env:
+          APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
+          APPLE_API_ISSUER_ID: ${{ secrets.APPLE_API_ISSUER_ID }}
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
         run: |
           # Capacitor 8 = SPM(비-CocoaPods) → App.xcworkspace 없음. -project App.xcodeproj 사용.
@@ -105,8 +108,11 @@ jobs:
             -configuration Release \
             -archivePath build/App.xcarchive \
             -destination 'generic/platform=iOS' \
-            CODE_SIGNING_ALLOWED=NO \
-            ${APPLE_TEAM_ID:+DEVELOPMENT_TEAM="$APPLE_TEAM_ID"}
+            -allowProvisioningUpdates \
+            ${APPLE_TEAM_ID:+DEVELOPMENT_TEAM="$APPLE_TEAM_ID"} \
+            -authenticationKeyID "$APPLE_API_KEY_ID" \
+            -authenticationKeyIssuerID "$APPLE_API_ISSUER_ID" \
+            -authenticationKeyPath "$HOME/private_keys/AuthKey_${APPLE_API_KEY_ID}.p8"
 
       - name: Export IPA (app-store)
         working-directory: ios/App
