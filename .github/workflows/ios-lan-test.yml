@@ -90,11 +90,12 @@ jobs:
           mkdir -p ~/private_keys
           printf '%s' "$APPLE_API_KEY_P8" | base64 -d > ~/private_keys/AuthKey_${APPLE_API_KEY_ID}.p8
 
-      - name: Archive (xcodebuild, automatic signing via ASC API key)
+      # 서명 없이 archive → export 단계에서 App Store(Distribution) 서명.
+      # Distribution profile 은 기기 등록이 불필요하므로 automatic-Development 의
+      # "no devices" 오류를 회피한다 (CI App Store 표준 패턴).
+      - name: Archive (unsigned)
         working-directory: ios/App
         env:
-          APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
-          APPLE_API_ISSUER_ID: ${{ secrets.APPLE_API_ISSUER_ID }}
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
         run: |
           # Capacitor 8 = SPM(비-CocoaPods) → App.xcworkspace 없음. -project App.xcodeproj 사용.
@@ -103,11 +104,9 @@ jobs:
             -scheme App \
             -configuration Release \
             -archivePath build/App.xcarchive \
-            -allowProvisioningUpdates \
-            ${APPLE_TEAM_ID:+DEVELOPMENT_TEAM="$APPLE_TEAM_ID"} \
-            -authenticationKeyID "$APPLE_API_KEY_ID" \
-            -authenticationKeyIssuerID "$APPLE_API_ISSUER_ID" \
-            -authenticationKeyPath "$HOME/private_keys/AuthKey_${APPLE_API_KEY_ID}.p8"
+            -destination 'generic/platform=iOS' \
+            CODE_SIGNING_ALLOWED=NO \
+            ${APPLE_TEAM_ID:+DEVELOPMENT_TEAM="$APPLE_TEAM_ID"}
 
       - name: Export IPA (app-store)
         working-directory: ios/App
