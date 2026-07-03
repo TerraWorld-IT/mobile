@@ -58,12 +58,20 @@
 	<string>꾸민 테라리움 화면을 사진 보관함에 저장하기 위해 권한이 필요합니다. 거부해도 앱의 다른 기능에는 영향이 없습니다.</string>
 	<key>NSUserTrackingUsageDescription</key>
 	<string>맞춤형 광고 노출과 광고 보상 기능을 위해 추적 권한을 사용합니다. 거부 시 일반 광고만 노출되며, 보상은 정상 지급됩니다.</string>
+	<!-- iOS 14+ 로컬 네트워크 접근 안내 — dev 빌드가 같은 WiFi 의 개발 서버(사설 IP)에
+	     접속할 때 표시. 프로덕션(공개 도메인)에서는 트리거되지 않음. -->
+	<key>NSLocalNetworkUsageDescription</key>
+	<string>같은 네트워크의 개발용 테스트 서버에 접속하기 위해 로컬 네트워크 접근을 사용합니다.</string>
 
-	<!-- 보안: 전역 cleartext 차단 + dev 호스트만 예외 허용 -->
+	<!-- 보안: 전역 cleartext 차단 + dev 호스트만 예외 허용.
+	     NSAllowsLocalNetworking: 사설망(192.168.x/10.x/.local) 로의 cleartext 허용 —
+	     LAN 실기기 dev 테스트용. 프로덕션(https://terraworld.app 공개 TLS)은 영향 없음. -->
 	<key>NSAppTransportSecurity</key>
 	<dict>
 		<key>NSAllowsArbitraryLoads</key>
 		<false/>
+		<key>NSAllowsLocalNetworking</key>
+		<true/>
 		<key>NSExceptionDomains</key>
 		<dict>
 			<key>localhost</key>
