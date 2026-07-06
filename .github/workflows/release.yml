@@ -47,9 +47,13 @@ jobs:
       - name: Check if google-services secret is configured
         # if: 조건에서 secrets.* 를 직접 참조할 수 없어 (Unrecognized named-value: 'secrets')
         # keystore_check 와 동일하게 run: 스텝에서 확인 후 output 으로 넘긴다.
+        # secret 값은 env: 로 전달 — ${{ }} 로 run 스크립트 본문에 직접 splice 하면
+        # 값에 따옴표/개행이 있을 때 셸 파싱이 깨질 수 있다 (firebase_appdist_check 에서 실측).
         id: google_services_check
+        env:
+          GOOGLE_SERVICES_JSON_BASE64: ${{ secrets.GOOGLE_SERVICES_JSON_BASE64 }}
         run: |
-          if [ -n "${{ secrets.GOOGLE_SERVICES_JSON_BASE64 }}" ]; then
+          if [ -n "$GOOGLE_SERVICES_JSON_BASE64" ]; then
             echo "has_google_services=true" >> "$GITHUB_OUTPUT"
           else
             echo "has_google_services=false" >> "$GITHUB_OUTPUT"
@@ -160,9 +164,13 @@ jobs:
           retention-days: 30
 
       - name: Check if Firebase App Distribution secret is configured
+        # 이 secret 은 raw JSON(따옴표/개행 포함) 이라 ${{ }} 직접 splice 시
+        # `[: too many arguments` 로 셸 파싱이 깨진다 (실측) — env: 로 전달.
         id: firebase_appdist_check
+        env:
+          FIREBASE_SERVICE_ACCOUNT_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }}
         run: |
-          if [ -n "${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }}" ]; then
+          if [ -n "$FIREBASE_SERVICE_ACCOUNT_JSON" ]; then
             echo "has_firebase_sa=true" >> "$GITHUB_OUTPUT"
           else
             echo "has_firebase_sa=false" >> "$GITHUB_OUTPUT"
