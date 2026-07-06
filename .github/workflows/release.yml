@@ -46,10 +46,14 @@ jobs:
 
       - name: Capacitor sync (production)
         # NODE_ENV=production 으로 capacitor.config.ts 의 isDev 분기를 production
-        # 으로 강제 → server.url 이 https://terraworld.app 로 sync, cleartext: false.
+        # 으로 강제 → server.url 이 production 도메인으로 sync, cleartext: false.
         # 이게 빠지면 release AAB 가 dev 호스트 (10.0.2.2:3000) 박힌 채 서명됨.
         env:
           NODE_ENV: production
+          # 프로덕션 배포 도메인을 빌드타임 주입 (ios-release job 과 동일 — parity fix).
+          # repo variable MOBILE_PROD_URL 미설정 시 capacitor.config.ts 의
+          # terraworld.app fallback 이 적용된다.
+          MOBILE_PROD_URL: ${{ vars.MOBILE_PROD_URL }}
         run: npx cap sync android
 
       - name: Setup Java
