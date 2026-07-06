@@ -43,6 +43,7 @@ jobs:
         with:
           distribution: temurin
           java-version: 21
+          cache: gradle
 
       # 2. Build debug APK + size guard
       - name: Build Android debug APK
