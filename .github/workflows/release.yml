@@ -141,13 +141,17 @@ jobs:
           printf '%s' "$KEYSTORE_BASE64" | base64 -d > android/app/keystore/release.keystore
           echo "ANDROID_KEYSTORE_FILE=keystore/release.keystore" >> "$GITHUB_ENV"
 
-      - name: Build release AAB
+      - name: Build release AAB + APK
+        # APK 도 함께 빌드 — Firebase App Distribution 은 AAB 처리에 Play Console
+        # 프로젝트 연결을 요구한다 ("This project is not linked to a Google Play
+        # account", 실측). Play Console 미등록 상태이므로 테스터 배포는 APK 로,
+        # Play 제출용 AAB 는 그대로 유지 (둘 다 같은 signingConfig 적용).
         env:
           # 비밀번호 / alias 는 본 step 에서만 노출. $GITHUB_ENV 에 안 박힘.
           ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
           ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
           ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
-        run: cd android && ./gradlew bundleRelease
+        run: cd android && ./gradlew bundleRelease assembleRelease
 
       - name: Locate AAB
         id: locate_aab
@@ -156,6 +160,13 @@ jobs:
           echo "aab_path=$AAB" >> "$GITHUB_OUTPUT"
           ls -lh "$AAB"
 
+      - name: Locate APK
+        id: locate_apk
+        run: |
+          APK=$(find android/app/build/outputs/apk/release -name "*.apk" | head -1)
+          echo "apk_path=$APK" >> "$GITHUB_OUTPUT"
+          ls -lh "$APK"
+
       - name: Upload AAB artifact
         uses: actions/upload-artifact@v4
         with:
@@ -163,14 +174,17 @@ jobs:
           path: ${{ steps.locate_aab.outputs.aab_path }}
           retention-days: 30
 
-      - name: Check if Firebase App Distribution secret is configured
+      - name: Check if Firebase App Distribution is configured
         # 이 secret 은 raw JSON(따옴표/개행 포함) 이라 ${{ }} 직접 splice 시
         # `[: too many arguments` 로 셸 파싱이 깨진다 (실측) — env: 로 전달.
+        # appId(변수)도 같이 확인 — secret 만 있고 변수가 없으면 appId 빈 값으로
+        # 액션이 호출돼 실패한다.
         id: firebase_appdist_check
         env:
           FIREBASE_SERVICE_ACCOUNT_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }}
+          FIREBASE_ANDROID_APP_ID: ${{ vars.FIREBASE_ANDROID_APP_ID }}
         run: |
-          if [ -n "$FIREBASE_SERVICE_ACCOUNT_JSON" ]; then
+          if [ -n "$FIREBASE_SERVICE_ACCOUNT_JSON" ] && [ -n "$FIREBASE_ANDROID_APP_ID" ]; then
             echo "has_firebase_sa=true" >> "$GITHUB_OUTPUT"
           else
             echo "has_firebase_sa=false" >> "$GITHUB_OUTPUT"
@@ -178,15 +192,18 @@ jobs:
 
       # Firebase App Distribution — 일상 테스트 배포 채널 (iOS 는 TestFlight 유지, 여기선 Android 전용).
       # tag push 여부와 무관하게 매 실행마다 testers 그룹에 배포한다 (workflow_dispatch 로도 동작).
-      # FIREBASE_SERVICE_ACCOUNT_JSON secret 이 없으면 조용히 skip.
+      # APK 배포 (AAB 아님 — 위 "Build release AAB + APK" 코멘트 참조).
+      # continue-on-error: 이 스텝은 best-effort 테스터 배포 채널이라, 여기서 실패해도
+      # 아래 "Create GitHub Release"(실제 태그 릴리스) 가 막히면 안 된다 (실측 리뷰 발견).
       - name: Distribute to Firebase App Distribution (testers)
         if: steps.firebase_appdist_check.outputs.has_firebase_sa == 'true'
+        continue-on-error: true
         uses: wzieba/Firebase-Distribution-Github-Action@v1.7.1
         with:
           appId: ${{ vars.FIREBASE_ANDROID_APP_ID }}
           serviceCredentialsFileContent: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }}
           groups: testers
-          file: ${{ steps.locate_aab.outputs.aab_path }}
+          file: ${{ steps.locate_apk.outputs.apk_path }}
           releaseNotes: ${{ github.event.inputs.release_notes || format('tag {0}', github.ref_name) }}
 
       - name: Create GitHub Release
