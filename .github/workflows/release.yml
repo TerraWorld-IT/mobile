@@ -44,8 +44,19 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Check if google-services secret is configured
+        # if: 조건에서 secrets.* 를 직접 참조할 수 없어 (Unrecognized named-value: 'secrets')
+        # keystore_check 와 동일하게 run: 스텝에서 확인 후 output 으로 넘긴다.
+        id: google_services_check
+        run: |
+          if [ -n "${{ secrets.GOOGLE_SERVICES_JSON_BASE64 }}" ]; then
+            echo "has_google_services=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_google_services=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Decode google-services.json (Firebase — FCM + App Distribution)
-        if: ${{ secrets.GOOGLE_SERVICES_JSON_BASE64 != '' }}
+        if: steps.google_services_check.outputs.has_google_services == 'true'
         env:
           GOOGLE_SERVICES_JSON_BASE64: ${{ secrets.GOOGLE_SERVICES_JSON_BASE64 }}
         run: |
@@ -148,11 +159,20 @@ jobs:
           path: ${{ steps.locate_aab.outputs.aab_path }}
           retention-days: 30
 
+      - name: Check if Firebase App Distribution secret is configured
+        id: firebase_appdist_check
+        run: |
+          if [ -n "${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }}" ]; then
+            echo "has_firebase_sa=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_firebase_sa=false" >> "$GITHUB_OUTPUT"
+          fi
+
       # Firebase App Distribution — 일상 테스트 배포 채널 (iOS 는 TestFlight 유지, 여기선 Android 전용).
       # tag push 여부와 무관하게 매 실행마다 testers 그룹에 배포한다 (workflow_dispatch 로도 동작).
       # FIREBASE_SERVICE_ACCOUNT_JSON secret 이 없으면 조용히 skip.
       - name: Distribute to Firebase App Distribution (testers)
-        if: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON != '' }}
+        if: steps.firebase_appdist_check.outputs.has_firebase_sa == 'true'
         uses: wzieba/Firebase-Distribution-Github-Action@v1.7.1
         with:
           appId: ${{ vars.FIREBASE_ANDROID_APP_ID }}
