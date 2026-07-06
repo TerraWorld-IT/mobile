@@ -18,7 +18,6 @@ updates:
       - dependency-name: 'actions/setup-node'
       - dependency-name: 'actions/setup-java'
       - dependency-name: 'actions/upload-artifact'
-      - dependency-name: 'actions/setup-python'
   - package-ecosystem: 'npm'
     directory: '/'
     schedule:
