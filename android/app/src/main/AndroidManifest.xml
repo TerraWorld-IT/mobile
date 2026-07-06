@@ -39,12 +39,12 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
 
-            <!-- Deep linking: terraworld.app/share/* -->
+            <!-- Deep linking: terraworld.web-qplay.kr/share/* -->
             <intent-filter android:autoVerify="true">
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
-                <data android:scheme="https" android:host="terraworld.app" />
+                <data android:scheme="https" android:host="terraworld.web-qplay.kr" />
             </intent-filter>
 
         </activity>
