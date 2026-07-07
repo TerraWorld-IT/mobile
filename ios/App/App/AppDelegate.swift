@@ -38,7 +38,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     ///   - "terraworld"  : Info.plist CFBundleURLTypes 에 등록된 custom scheme
     ///   - "https"+host  : Universal Link (associated-domains entitlement)
     private static let allowedSchemes: Set<String> = ["terraworld", "https"]
-    private static let allowedHosts: Set<String> = ["terraworld.app"]
+    private static let allowedHosts: Set<String> = ["terraworld.web-qplay.kr"]
 
     func application(_ app: UIApplication, open url: URL, options: [UIApplication.OpenURLOptionsKey: Any] = [:]) -> Bool {
         guard let scheme = url.scheme?.lowercased(), Self.allowedSchemes.contains(scheme) else {
