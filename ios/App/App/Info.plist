@@ -68,7 +68,7 @@
 
 	<!-- 보안: 전역 cleartext 차단 + dev 호스트만 예외 허용.
 	     NSAllowsLocalNetworking: 사설망(192.168.x/10.x/.local) 로의 cleartext 허용 —
-	     LAN 실기기 dev 테스트용. 프로덕션(https://terraworld.app 공개 TLS)은 영향 없음. -->
+	     LAN 실기기 dev 테스트용. 프로덕션(https://terraworld.web-qplay.kr 공개 TLS)은 영향 없음. -->
 	<key>NSAppTransportSecurity</key>
 	<dict>
 		<key>NSAllowsArbitraryLoads</key>
@@ -85,7 +85,7 @@
 		</dict>
 	</dict>
 
-	<!-- 딥링크: terraworld.app/share/* — Universal Links. associated-domains
+	<!-- 딥링크: terraworld.web-qplay.kr/share/* — Universal Links. associated-domains
 	     entitlement 도 동시 활성화 필요 (App.entitlements 참조). -->
 	<key>CFBundleURLTypes</key>
 	<array>

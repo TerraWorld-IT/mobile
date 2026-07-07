@@ -15,10 +15,10 @@ const config: CapacitorConfig = {
     // Dev: 기본은 Android 에뮬레이터의 호스트 alias(10.0.2.2). 실기기 테스트 시
     // MOBILE_SERVER_URL=http://<PC-LAN-IP>:3000 으로 오버라이드 (예: 192.168.0.10:3000).
     // 프로덕션 URL 도 env 로 파라미터화 — 배포 도메인(web-qplay.kr 서브도메인)을
-    // 빌드타임에 MOBILE_PROD_URL 로 주입. 미설정 시 terraworld.app fallback.
+    // 빌드타임에 MOBILE_PROD_URL 로 주입. 미설정 시 terraworld.web-qplay.kr fallback.
     url: isDev
       ? (process.env.MOBILE_SERVER_URL ?? 'http://10.0.2.2:3000')
-      : (process.env.MOBILE_PROD_URL ?? 'https://terraworld.app'),
+      : (process.env.MOBILE_PROD_URL ?? 'https://terraworld.web-qplay.kr'),
     cleartext: isDev, // Allow HTTP in dev mode
   },
 
@@ -51,6 +51,11 @@ const config: CapacitorConfig = {
   ios: {
     scheme: 'TerraWorld',
     contentInset: 'always',
+    // 핀치줌/외부 링크 롱프레스 미리보기 차단 (완전한 네이티브 앱처럼 동작) — 기본값에
+    // 의존하지 않고 명시. zoomEnabled=false 는 WKWebView scrollView 의 핀치 제스처를
+    // 비활성화한다 (CAPBridgeViewController 의 WebViewDelegationHandler 경유).
+    zoomEnabled: false,
+    allowsLinkPreview: false,
   },
 
   // Android-specific overrides

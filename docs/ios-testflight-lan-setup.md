@@ -6,7 +6,7 @@ Mac 없이 GitHub Actions(클라우드 macOS)로 iOS 앱을 빌드해 TestFlight
 
 - Bundle ID: `app.terraworld.mobile`
 - 워크플로: `.github/workflows/ios-lan-test.yml` (`workflow_dispatch`, 입력 `server_url` 기본 = LAN)
-- 프로덕션 릴리스(`release.yml`, `v*` 태그, https://terraworld.app)와는 별개
+- 프로덕션 릴리스(`release.yml`, `v*` 태그, https://terraworld.web-qplay.kr)와는 별개
 
 ---
 
@@ -83,5 +83,5 @@ base64 -w0 AuthKey_ABCD1234EF.p8    # (mac 이면 -w0 대신) base64 AuthKey_*.p
 | TestFlight 에 빌드 안 보임 | Apple 처리 지연(대기) 또는 CFBundleVersion 중복 — 재실행(run_number 자동 증가) |
 
 ## 참고: 프로덕션 전환 시
-도메인+서버 확보 후에는 `release.yml`(태그 `v*`)로 `https://terraworld.app` 를 가리키는 정식 빌드를 만든다.
+도메인+서버 확보 후에는 `release.yml`(태그 `v*`)로 `https://terraworld.web-qplay.kr` 를 가리키는 정식 빌드를 만든다.
 그때 이 LAN 테스트 워크플로는 불필요(삭제 가능). 웹(backend/frontend) 프로덕션 배포는 별도(CI/CD 결함 CI-1~9 수정 후).

@@ -80,7 +80,7 @@ jobs:
           NODE_ENV: production
           # 프로덕션 배포 도메인을 빌드타임 주입 (ios-release job 과 동일 — parity fix).
           # repo variable MOBILE_PROD_URL 미설정 시 capacitor.config.ts 의
-          # terraworld.app fallback 이 적용된다.
+          # terraworld.web-qplay.kr fallback 이 적용된다.
           MOBILE_PROD_URL: ${{ vars.MOBILE_PROD_URL }}
         run: npx cap sync android
 
@@ -269,7 +269,7 @@ jobs:
         env:
           NODE_ENV: production
           # 프로덕션 배포 도메인(web-qplay.kr 서브도메인)을 빌드타임 주입.
-          # repo variable MOBILE_PROD_URL 미설정 시 terraworld.app fallback.
+          # repo variable MOBILE_PROD_URL 미설정 시 terraworld.web-qplay.kr fallback.
           MOBILE_PROD_URL: ${{ vars.MOBILE_PROD_URL }}
         run: npx cap sync ios
 

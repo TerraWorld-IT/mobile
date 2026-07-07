@@ -2,7 +2,7 @@ name: iOS LAN Test (TestFlight)
 
 # ─────────────────────────────────────────────────────────────────────────────
 # 로컬 LAN 서버(개발 PC)를 가리키는 네이티브 iOS 테스트 빌드 → TestFlight 업로드.
-# release.yml(프로덕션, tag v* + https://terraworld.app) 과 분리된 수동 테스트 경로.
+# release.yml(프로덕션, tag v* + https://terraworld.web-qplay.kr) 과 분리된 수동 테스트 경로.
 #
 # 앱은 원격 WebView 셸이라 server.url 이 빌드 타임에 baking 됨. 여기서는 dev 모드
 # (NODE_ENV 미설정)로 cap sync 하여 MOBILE_SERVER_URL(기본=개발 PC LAN)을 baking.

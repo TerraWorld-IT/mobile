@@ -6,7 +6,7 @@
 #
 # 검증:
 #   1. NODE_ENV=production 환경에서 capacitor.config.ts 가 resolve 하는 server.url
-#      이 https://terraworld.app 인지
+#      이 https://terraworld.web-qplay.kr 인지
 #   2. cleartext = false 인지
 #   3. AdMob test ID (ca-app-pub-3940256099942544) 가 없는지
 #   4. capacitor.config.json 이 체크인 됐는지 (gitignore 회피 검출)
@@ -58,8 +58,8 @@ fi
 
 # 3. server.url 검증
 echo
-echo "[3/4] server.url = https://terraworld.app ?"
-if echo "$config_dump" | grep -q '"url": *"https://terraworld\.app"'; then
+echo "[3/4] server.url = https://terraworld.web-qplay.kr ?"
+if echo "$config_dump" | grep -q '"url": *"https://terraworld\.web-qplay\.kr"'; then
   ok "production URL OK"
 else
   err "production URL mismatch. dev URL 박혔을 가능성:"
