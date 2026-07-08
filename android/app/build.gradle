@@ -84,6 +84,11 @@ dependencies {
     implementation "androidx.appcompat:appcompat:$androidxAppCompatVersion"
     implementation "androidx.coordinatorlayout:coordinatorlayout:$androidxCoordinatorLayoutVersion"
     implementation "androidx.core:core-splashscreen:$coreSplashScreenVersion"
+    // 앱이 시간대 기반(KST) 자체 다크모드 로직을 갖고 있어, Android 시스템 다크모드와
+    // WebView 의 algorithmic darkening 이 이중으로 개입하지 않도록 명시 비활성화하는 데 사용
+    // (MainActivity.java 참조). Capacitor 코어가 이미 전이 의존성으로 포함할 수 있으나,
+    // 직접 API(WebSettingsCompat/WebViewFeature)를 쓰므로 명시 선언.
+    implementation "androidx.webkit:webkit:1.12.1"
     implementation project(':capacitor-android')
     testImplementation "junit:junit:$junitVersion"
     androidTestImplementation "androidx.test.ext:junit:$androidxJunitVersion"
