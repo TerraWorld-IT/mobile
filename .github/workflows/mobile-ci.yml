@@ -96,7 +96,10 @@ jobs:
   # iOS build check (main branch only, macOS runner is expensive)
   ios-check:
     name: iOS Build Check
-    runs-on: macos-14
+    # macos-14 는 고정 이미지라 release.yml 의 ios-release job(macos-latest, Xcode 26 명시 선택)과
+    # 툴체인이 어긋나 있었다 — 동일 커밋인데 release 는 성공, 이 job 만 CAPBridgeProtocol 관련
+    # 컴파일 에러로 실패하던 원인(전수 UX 점검 후속 CI 조사에서 확인). release.yml 과 동일하게 맞춤.
+    runs-on: macos-latest
     timeout-minutes: 20
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     steps:
@@ -110,6 +113,16 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
+
+      # release.yml 의 ios-release job 과 동일 패턴 — Capacitor swift-pm 이 요구하는 최신 툴체인.
+      - name: Select Xcode 26 (release.yml 과 동일 툴체인)
+        run: |
+          XC=$(ls -d /Applications/Xcode_26*.app 2>/dev/null | sort -V | tail -1)
+          if [ -z "$XC" ]; then
+            echo "::error::Xcode 26 미설치 — 사용 가능:"; ls -d /Applications/Xcode_*.app || true; exit 1
+          fi
+          sudo xcode-select -s "$XC/Contents/Developer"
+          xcodebuild -version
 
       - name: Capacitor sync
         run: npx cap sync ios
