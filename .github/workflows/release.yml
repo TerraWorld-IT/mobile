@@ -381,17 +381,19 @@ jobs:
           # Manual signing — 임포트한 고정 Distribution 인증서 + App Store profile 을 재사용한다.
           # -allowProvisioningUpdates 를 쓰지 않는다(그게 매 실행 인증서를 새로 발급해 상한을 소진했다).
           # signed archive 여야 embedded framework(GoogleMobileAds 등)도 서명됨 → altool 90035 회피.
+          #
+          # 서명 설정(CODE_SIGN_STYLE/IDENTITY/DEVELOPMENT_TEAM/PROVISIONING_PROFILE_SPECIFIER)은
+          # 여기 CLI 로 넘기지 않는다 — xcodebuild 의 CLI build setting 은 *모든* 타겟에 적용되어
+          # SPM 패키지 타겟(Capacitor 의 IONCameraLib 등)까지 프로파일을 강요하고
+          # "does not support provisioning profiles" 로 archive 가 실패한다(v0.1.10 실측).
+          # 대신 App 타겟의 Release 설정(project.pbxproj)에만 넣어 스코프를 한정했다.
           # Capacitor 8 = SPM(비-CocoaPods) → App.xcworkspace 없음. -project App.xcodeproj.
           xcodebuild archive \
             -project App.xcodeproj \
             -scheme App \
             -configuration Release \
             -archivePath build/App.xcarchive \
-            -destination 'generic/platform=iOS' \
-            CODE_SIGN_STYLE=Manual \
-            CODE_SIGN_IDENTITY="Apple Distribution" \
-            PROVISIONING_PROFILE_SPECIFIER="$PROVISION_PROFILE_NAME" \
-            DEVELOPMENT_TEAM="$APPLE_TEAM_ID"
+            -destination 'generic/platform=iOS'
 
       - name: Export IPA
         if: steps.secrets_check.outputs.has_signing == 'true'
