@@ -50,7 +50,14 @@ const config: CapacitorConfig = {
   // iOS-specific overrides
   ios: {
     scheme: 'TerraWorld',
-    contentInset: 'always',
+    // 'never' = UIScrollView.contentInsetAdjustmentBehavior.never (Capacitor 기본값).
+    // 웹 레이어가 viewport-fit=cover + env(safe-area-inset-*) 로 세이프에어리어를 직접 처리하므로
+    // (layouts/default.vue), WKWebView 가 인셋을 한 번 더 얹으면 스크롤 콘텐츠가 뷰포트보다 커져
+    // 문서 전체가 스크롤/러버밴딩하고, 노출된 인셋 영역은 아무도 칠하지 않아 검게 보인다.
+    contentInset: 'never',
+    // WKWebView 배경. 지정하지 않으면 시스템 기본색이 드러나 상하단에 검은 띠가 생긴다.
+    // android 와 동일한 크림색으로 맞춘다.
+    backgroundColor: '#FFF8EB',
     // 핀치줌/외부 링크 롱프레스 미리보기 차단 (완전한 네이티브 앱처럼 동작) — 기본값에
     // 의존하지 않고 명시. zoomEnabled=false 는 WKWebView scrollView 의 핀치 제스처를
     // 비활성화한다 (CAPBridgeViewController 의 WebViewDelegationHandler 경유).
