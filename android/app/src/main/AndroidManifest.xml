@@ -26,6 +26,18 @@
             android:name="com.google.android.gms.ads.APPLICATION_ID"
             android:value="${admobAppId}" />
 
+        <!-- GMA SDK 초기화/광고 로드 최적화 플래그.
+             OPTIMIZE_INITIALIZATION: MobileAds.initialize() 를 백그라운드 스레드에서 수행,
+             OPTIMIZE_AD_LOADING: 광고 로드 작업을 백그라운드 스레드로 이동.
+             메인 스레드 블로킹(콜드스타트 지연·ANR 리스크) 감소.
+             https://developers.google.com/admob/android/optimize-initialization -->
+        <meta-data
+            android:name="com.google.android.gms.ads.flag.OPTIMIZE_INITIALIZATION"
+            android:value="true" />
+        <meta-data
+            android:name="com.google.android.gms.ads.flag.OPTIMIZE_AD_LOADING"
+            android:value="true" />
+
         <activity
             android:configChanges="orientation|keyboardHidden|keyboard|screenSize|locale|smallestScreenSize|screenLayout|uiMode|navigation|density"
             android:screenOrientation="portrait"

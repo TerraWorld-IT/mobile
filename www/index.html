@@ -84,6 +84,18 @@
   <script>
     // 이 페이지는 폴백입니다. 실제 앱은 Capacitor WebView가 원격 URL을 직접 로드합니다.
     // 원격 URL이 응답하지 않을 때 사용자가 멍하게 기다리지 않도록 친절히 안내합니다.
+    // capacitor.config.ts 의 server.errorPath 가 본 파일을 가리킨다.
+
+    // launchAutoHide: false 라 스플래시는 원격 앱이 SplashScreen.hide() 를 호출해야
+    // 사라진다. 원격 로드 실패로 이 폴백이 뜨면 hide() 호출 주체가 없어 폴백이 스플래시
+    // 뒤에 숨는다 → 여기서 직접 hide. ES5 가드 체인: 브릿지 미주입 환경(웹 브라우저,
+    // Android errorPath 는 플러그인 접근 불가 — Capacitor 문서)에서 안전 no-op 이며,
+    // optional chaining(?.) 과 달리 구형 WebView(Chrome <80) 에서도 파싱 에러가 없다.
+    var cap = window.Capacitor;
+    if (cap && cap.Plugins && cap.Plugins.SplashScreen && typeof cap.Plugins.SplashScreen.hide === 'function') {
+      cap.Plugins.SplashScreen.hide();
+    }
+
     var msgEl = document.getElementById('msg');
     var btn = document.getElementById('retry');
     function updateOnlineState() {
@@ -94,8 +106,19 @@
       }
     }
     btn.addEventListener('click', function () {
-      // Capacitor가 server.url 을 다시 로드하도록 강제 새로고침
-      window.location.reload();
+      // location.reload() 는 이 로컬 폴백 페이지 자신만 다시 로드한다 (errorPath 로
+      // 대체된 시점의 현재 문서 = 폴백). 원격 앱 URL 로 replace 해야 재시도가 실제
+      // 원격 재접속이 된다.
+      // __TW_SERVER_URL__ 플레이스홀더는 cap copy 후 scripts/inject-fallback-url.mjs
+      // (package.json capacitor:copy:after 훅) 가 capacitor.config.ts 와 동일한 해석
+      // (MOBILE_SERVER_URL/MOBILE_PROD_URL/NODE_ENV) 으로 네이티브 자산에서 치환한다 —
+      // dev/오버라이드 빌드가 production 고정 URL 로 이탈하는 회귀 방지 (Codex 리뷰).
+      var serverUrl = '__TW_SERVER_URL__';
+      if (serverUrl.indexOf('__TW_') === 0) {
+        // 훅 미실행(직접 열람 등) 폴백 — capacitor.config.ts 의 production 기본값과 동일.
+        serverUrl = 'https://terraworld.web-qplay.kr';
+      }
+      window.location.replace(serverUrl);
     });
     window.addEventListener('online', updateOnlineState);
     window.addEventListener('offline', updateOnlineState);

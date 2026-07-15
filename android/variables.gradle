@@ -13,4 +13,9 @@ ext {
     androidxJunitVersion = '1.3.0'
     androidxEspressoCoreVersion = '3.7.0'
     cordovaAndroidVersion = '14.0.1'
+    // @capacitor-community/admob 의 android/build.gradle 이
+    // `project.hasProperty('playServicesAdsVersion') ? rootProject.ext.playServicesAdsVersion : '24.9.+'`
+    // 로 본 변수를 우선 읽는다 (미선언 시 동적 '24.9.+' — 재현성 저해).
+    // 현재 '24.9.+' 의 실제 해석 버전 24.9.0 으로 핀 (Google Maven 24.9.x 최신 = 24.9.0 확인).
+    playServicesAdsVersion = '24.9.0'
 }
