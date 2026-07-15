@@ -3,8 +3,14 @@ name: Mobile CI
 on:
   push:
     branches: [main, develop]
+    paths-ignore:
+      - "**.md"
+      - "docs/**"
   pull_request:
     branches: [main, develop]
+    paths-ignore:
+      - "**.md"
+      - "docs/**"
 
 concurrency:
   group: mobile-ci-${{ github.ref }}
@@ -29,9 +35,11 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      # 1. Validate Capacitor config (비차단)
+      # 1. Validate Capacitor config (비차단 — shell `|| true` 는 UI 에 흔적이 안 남아
+      #    continue-on-error 로 전환: 실패 시 주황 표시로 가시화)
       - name: Validate capacitor.config.ts
-        run: npx cap doctor 2>&1 || true
+        run: npx cap doctor 2>&1
+        continue-on-error: true
       - name: Check plugin versions
         run: npx cap ls 2>&1
 
@@ -60,8 +68,10 @@ jobs:
             exit 1
           fi
 
+      # 비차단 유지하되 실패를 UI 에 가시화 (기존 `|| true` 는 무음 통과)
       - name: Android lint check
-        run: cd android && ./gradlew lint || true
+        run: cd android && ./gradlew lint
+        continue-on-error: true
 
       # 3. Unit tests
       - name: Run unit tests
@@ -105,17 +115,34 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # macOS 러너 절약 — iOS 빌드에 영향 주는 경로가 변경된 push 에만 xcodebuild 실행.
+      # job 분리 대신 step-level if (최소 침습): 필터 미매치 시 이후 step 전부 skip,
+      # job 자체는 green 으로 통과 (required check 호환).
+      - name: Detect iOS-relevant changes
+        id: filter
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            ios:
+              - 'ios/**'
+              - 'package.json'
+              - 'package-lock.json'
+              - 'capacitor.config.ts'
+
       - name: Setup Node.js
+        if: steps.filter.outputs.ios == 'true'
         uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: npm
 
       - name: Install dependencies
+        if: steps.filter.outputs.ios == 'true'
         run: npm ci
 
       # release.yml 의 ios-release job 과 동일 패턴 — Capacitor swift-pm 이 요구하는 최신 툴체인.
       - name: Select Xcode 26 (release.yml 과 동일 툴체인)
+        if: steps.filter.outputs.ios == 'true'
         run: |
           XC=$(ls -d /Applications/Xcode_26*.app 2>/dev/null | sort -V | tail -1)
           if [ -z "$XC" ]; then
@@ -124,11 +151,23 @@ jobs:
           sudo xcode-select -s "$XC/Contents/Developer"
           xcodebuild -version
 
+      # SPM 패키지 fetch 캐시 (CI-12) — Package.resolved 미커밋 상태라 Package.swift 해시 키.
+      # DerivedData 캐시는 무효화 함정이 있어 제외, swiftpm fetch 캐시만.
+      - name: Cache SwiftPM
+        if: steps.filter.outputs.ios == 'true'
+        uses: actions/cache@v4
+        with:
+          path: ~/Library/Caches/org.swift.swiftpm
+          key: spm-${{ runner.os }}-${{ hashFiles('ios/App/CapApp-SPM/Package.swift') }}
+          restore-keys: spm-${{ runner.os }}-
+
       - name: Capacitor sync
+        if: steps.filter.outputs.ios == 'true'
         run: npx cap sync ios
 
       # Capacitor 8+ SPM (Podfile 없음). ios/App/CapApp-SPM/Package.swift 가 의존성 정의.
       - name: Build iOS (simulator, no signing)
+        if: steps.filter.outputs.ios == 'true'
         run: |
           cd ios/App
           xcodebuild build \
