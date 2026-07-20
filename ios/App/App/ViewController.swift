@@ -3,6 +3,9 @@ import UIKit
 
 class ViewController: CAPBridgeViewController {
     override func capacitorDidLoad() {
+        // 앱-로컬 플러그인 등록 (인스타 스토리 직접 공유 — InstagramStoriesPlugin.swift).
+        bridge?.registerPluginInstance(InstagramStoriesPlugin())
+
         // Android는 시스템 하드웨어 뒤로가기(App.addListener('backButton', ...))로 뒤로가기가
         // 되지만, iOS는 그런 시스템 버튼이 없고 앱 안에도 대부분 화면에 뒤로가기 UI가 없어
         // 사용자가 서브 화면에 들어가면 나올 방법이 없었다(실사용자 리포트). WKWebView의

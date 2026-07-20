@@ -85,6 +85,12 @@
 		</dict>
 	</dict>
 
+	<!-- 인스타 스토리 직접 공유 — canOpenURL(instagram-stories://) 조회 허용
+	     (InstagramStoriesPlugin.swift). 미선언 시 canOpenURL 이 항상 false. -->
+	<key>LSApplicationQueriesSchemes</key>
+	<array>
+		<string>instagram-stories</string>
+	</array>
 	<!-- 딥링크: terraworld.web-qplay.kr/share/* — Universal Links. associated-domains
 	     entitlement 도 동시 활성화 필요 (App.entitlements 참조). -->
 	<key>CFBundleURLTypes</key>
