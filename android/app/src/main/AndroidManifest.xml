@@ -52,12 +52,23 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
 
-            <!-- Deep linking: terraworld.web-qplay.kr/share/* -->
+            <!-- Deep linking: terraworld.web-qplay.kr/share/* 만 앱이 캡처.
+                 pathPrefix 없이는 해당 호스트 전 경로(약관 페이지 등)가 앱으로 열려
+                 웹 레이어 DEEP_LINK_RE 가 드롭 — 목적지 유실 (2026-07-20 audit B5-3). -->
             <intent-filter android:autoVerify="true">
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
-                <data android:scheme="https" android:host="terraworld.web-qplay.kr" />
+                <!-- trailing slash — "/share" prefix 는 "/shareholder" 등 무관 경로까지 매칭한다 (Codex R1) -->
+                <data android:scheme="https" android:host="terraworld.web-qplay.kr" android:pathPrefix="/share/" />
+            </intent-filter>
+
+            <!-- 커스텀 스킴 terraworld:// — iOS(Info.plist CFBundleURLTypes) 파리티 (audit B5-3). -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="terraworld" />
             </intent-filter>
 
         </activity>

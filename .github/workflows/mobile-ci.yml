@@ -46,6 +46,19 @@ jobs:
       - name: Capacitor sync
         run: npx cap sync android
 
+      # frontend↔mobile Capacitor 파리티 가드 — 어떤 워크플로에서도 미호출이던 orphan 스크립트
+      # 배선 (2026-07-20 audit B5-4). 스크립트는 워크스페이스의 ../frontend/package.json 을
+      # 읽으므로 mobile 단독 체크아웃(GITHUB_TOKEN 은 cross-repo 접근 불가)에선 skip 하고
+      # 알린다 — 완전한 CI 게이트化는 org PAT 시크릿 필요(운영 결정 대기). 로컬 워크스페이스
+      # 에서는 `npm run check:parity` 로 실행 가능.
+      - name: Check capacitor version parity (workspace checkout only)
+        run: |
+          if [ -f ../frontend/package.json ]; then
+            node scripts/check-capacitor-sync.mjs
+          else
+            echo "::notice::frontend checkout 없음 — 파리티 검사 skip (로컬: npm run check:parity)"
+          fi
+
       - name: Setup Java
         uses: actions/setup-java@v4
         with:

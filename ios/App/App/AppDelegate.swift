@@ -65,4 +65,22 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         return ApplicationDelegateProxy.shared.application(application, continue: userActivity, restorationHandler: restorationHandler)
     }
 
+    // MARK: - Push (APNs → Capacitor 포워딩)
+    // @capacitor/push-notifications 는 아래 NotificationCenter post 를 구독해야만
+    // JS 'registration'/'registrationError' 이벤트를 발화한다 (플러그인 소스
+    // PushNotificationsPlugin.swift — swizzling 없음). 이 두 메서드가 없으면 iOS 푸시
+    // 등록이 웹 레이어에 영원히 도달하지 않는다 (2026-07-20 audit B3-1 ①).
+    //
+    // ⚠️ 알려진 잔여 갭 (B3-1 ②): 여기서 전달되는 값은 raw APNs 디바이스 토큰이다.
+    // 백엔드 FcmService 는 FCM registration token 을 기대하므로, 실제 iOS 푸시 발송까지
+    // 이으려면 FirebaseMessaging(SPM) 통합 + `Messaging.messaging().apnsToken = deviceToken`
+    // 후 FCM 토큰을 post 하는 교환 단계가 필요하다 — macOS/Xcode 검증 환경에서 후속 작업.
+    func application(_ application: UIApplication, didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data) {
+        NotificationCenter.default.post(name: .capacitorDidRegisterForRemoteNotifications, object: deviceToken)
+    }
+
+    func application(_ application: UIApplication, didFailToRegisterForRemoteNotificationsWithError error: Error) {
+        NotificationCenter.default.post(name: .capacitorDidFailToRegisterForRemoteNotifications, object: error)
+    }
+
 }

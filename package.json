@@ -5,6 +5,7 @@
   "description": "TerraWorld Mobile App — Capacitor WebView shell for iOS/Android",
   "scripts": {
     "sync": "cap sync",
+    "check:parity": "node scripts/check-capacitor-sync.mjs",
     "capacitor:copy:after": "node scripts/inject-fallback-url.mjs",
     "open:ios": "cap open ios",
     "open:android": "cap open android",
