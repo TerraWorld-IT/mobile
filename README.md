@@ -81,6 +81,19 @@ dev 모드는 Android 에뮬레이터에서 호스트 머신 PC 의 Nuxt dev 서
 | `@capacitor/splash-screen` | 스플래시 |
 | `@capacitor/status-bar` | 상태바 색상 |
 
+### App-local plugin (npm 아님 — 본 레포 소스, 2026-07-21)
+
+| plugin | 역할 | 소스 |
+|---|---|---|
+| `DistanceTracker` | 거리 기록 백그라운드 위치 수집 — while-in-use FGS(location) 가 fix 를 큐잉, 포그라운드 복귀 시 웹이 drain. Play Console FGS 선언서 제출 대상 | `DistanceTrackerPlugin.java` + `DistanceTrackingService.java` (Android 전용, iOS 는 웹 폴백) |
+| `InstagramStories` | 테라리움 스티커를 인스타 스토리로 직공유 — Android ADD_TO_STORY intent + FileProvider / iOS pasteboard(5분 만료) + `instagram-stories://`. `NUXT_PUBLIC_META_APP_ID` 필요 | `InstagramStoriesPlugin.java` / `InstagramStoriesPlugin.swift` |
+
+- 등록 위치: Android 는 `MainActivity.onCreate` 의 `registerPlugin()` (**super.onCreate 이전**),
+  iOS 는 `ViewController.capacitorDidLoad` 의 `registerPluginInstance()`.
+- 웹 계약(SoT): `frontend/app/lib/nativeDistanceTracker.ts` / `instagramStories.ts` — 플러그인
+  부재·실패 시 웹은 항상 폴백 경로를 유지한다 (실기기 QA 전 필수 전제).
+- 네이티브 변경은 **스토어 릴리스로만** 사용자에게 도달한다 (웹 배포와 별개).
+
 새 plugin 추가 시 `frontend/package.json` 과 동일 버전으로 동기화.
 
 ## 출시 일정 (참고)
