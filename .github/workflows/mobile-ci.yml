@@ -133,7 +133,7 @@ jobs:
       # job 자체는 green 으로 통과 (required check 호환).
       - name: Detect iOS-relevant changes
         id: filter
-        uses: dorny/paths-filter@v3
+        uses: dorny/paths-filter@v4
         with:
           filters: |
             ios:
