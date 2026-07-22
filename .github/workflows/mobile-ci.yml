@@ -168,7 +168,7 @@ jobs:
       # DerivedData 캐시는 무효화 함정이 있어 제외, swiftpm fetch 캐시만.
       - name: Cache SwiftPM
         if: steps.filter.outputs.ios == 'true'
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: ~/Library/Caches/org.swift.swiftpm
           key: spm-${{ runner.os }}-${{ hashFiles('ios/App/CapApp-SPM/Package.swift') }}
