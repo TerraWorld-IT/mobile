@@ -311,7 +311,7 @@ jobs:
 
       # SPM 패키지 fetch 캐시 (CI-12) — Package.resolved 미커밋 상태라 Package.swift 해시 키.
       - name: Cache SwiftPM
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: ~/Library/Caches/org.swift.swiftpm
           key: spm-${{ runner.os }}-${{ hashFiles('ios/App/CapApp-SPM/Package.swift') }}
