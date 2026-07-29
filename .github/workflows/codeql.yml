@@ -1,0 +1,63 @@
+# mobile SAST — backend(java-kotlin) / frontend(javascript-typescript) 에는 있고
+# mobile 에만 부재하던 CodeQL 을 추가. 세 repo 의 codeql.yml 은 트리거·query suite·
+# 권한을 동일하게 맞춘다.
+#
+# 분석 대상 = app-local 네이티브 소스. WebView 셸이라 JS/TS 앱 코드는 frontend repo 에
+# 있고(그쪽 codeql.yml 이 담당), 이 repo 의 www/ 는 빌드 산출물이다.
+#   - android/app/src/main/java/app/terraworld/mobile/
+#       DistanceTrackerPlugin.java / DistanceTrackingService.java /
+#       InstagramStoriesPlugin.java / MainActivity.java
+#
+# swift 를 매트릭스에 넣지 않은 이유: CodeQL 의 swift 추출기는 macOS 러너에서 실제
+# Xcode 빌드를 거쳐야 동작한다(java-kotlin 처럼 소스만 훑는 build-mode: none 이 안 됨).
+# 대상이 App.swift 3파일(AppDelegate / ViewController / InstagramStoriesPlugin)뿐이라
+# 상시 macOS job 을 물리는 비용·취약성이 이득보다 크다고 판단해 제외했다. 필요해지면
+# mobile-ci.yml 의 ios-check job(macos-latest + Xcode 26 선택 + cap sync ios)을 그대로
+# 본떠 별도 job 으로 추가할 것.
+
+name: CodeQL Security Audit
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  schedule:
+    # 매주 월요일 03:00 KST (UTC 18:00 일요일) — full scan
+    - cron: '0 18 * * 0'
+
+permissions:
+  actions: read
+  contents: read
+  security-events: write
+
+jobs:
+  analyze:
+    name: Analyze (${{ matrix.language }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        language: ['java-kotlin'] # mobile = Android 네이티브 플러그인 (Java)
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: ${{ matrix.language }}
+          # Gradle 빌드 없이 소스만 추출 — APK 빌드는 mobile-ci.yml 이 이미 수행하므로
+          # 보안 스캔에서 중복 빌드(+JDK/Gradle 캐시 셋업)를 지지 않는다.
+          build-mode: none
+          # backend / frontend codeql.yml 과 동일 query suite — CRITICAL + HIGH + MEDIUM.
+          queries: security-extended,security-and-quality
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v3
+        with:
+          category: '/language:${{ matrix.language }}'
+
+      # 결과는 GitHub Security 탭. Critical 발견 시 PR block.

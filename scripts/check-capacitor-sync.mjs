@@ -15,9 +15,13 @@
 //   node mobile/scripts/check-capacitor-sync.mjs --fixture mobile/tests/fixtures/capacitor-mismatch.json
 //
 // Exit codes:
-//   0 — aligned
+//   0 — aligned, 또는 형제 frontend clone 부재로 검사 skip
 //   1 — mismatch detected (or fixture asserted mismatch)
-//   2 — invocation error (file missing, JSON parse fail)
+//   2 — invocation error (자기 package.json 부재, fixture 부재, JSON parse fail)
+//
+// 파리티 검사는 frontend/ 와 mobile/ 이 나란히 놓인 워크스페이스에서만 성립한다.
+// mobile 단독 체크아웃(CI 등)에서는 실패가 아니라 skip(exit 0) — 없는 파일을
+// 에러로 올리면 게이트가 상시 red 가 되어 오히려 무시된다.
 
 import { readFileSync, existsSync } from 'node:fs'
 import { resolve, dirname } from 'node:path'
@@ -85,10 +89,18 @@ function main() {
     mobile = fixture.mobile
     console.log(`[fixture mode] ${args[fixtureIdx + 1]}`)
   } else {
-    const fePkg = loadJson(resolve(WORKSPACE_ROOT, 'frontend', 'package.json'))
-    const mbPkg = loadJson(resolve(WORKSPACE_ROOT, 'mobile', 'package.json'))
-    frontend = extractCapacitorDeps(fePkg)
-    mobile = extractCapacitorDeps(mbPkg)
+    const fePath = resolve(WORKSPACE_ROOT, 'frontend', 'package.json')
+    // 단독 체크아웃에는 비교 대상이 없다 — 게이트를 fail 시키지 않고 명시적으로 skip.
+    if (!existsSync(fePath)) {
+      console.log(`SKIP: frontend/package.json 없음 — ${fePath}`)
+      console.log('파리티 검사는 frontend/ 와 mobile/ 이 나란히 있는 워크스페이스에서만 동작한다.')
+      process.exit(0)
+    }
+    // 자기 package.json 은 워크스페이스 레이아웃(디렉터리명 mobile)에 의존하지 않도록
+    // 스크립트 위치 기준으로 해석한다.
+    const mbPath = resolve(__dirname, '..', 'package.json')
+    frontend = extractCapacitorDeps(loadJson(fePath))
+    mobile = extractCapacitorDeps(loadJson(mbPath))
   }
 
   const { mismatches, mobileOnly, frontendOnly } = compareDeps(frontend, mobile)
