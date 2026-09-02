@@ -26,6 +26,15 @@
             android:name="com.google.android.gms.ads.APPLICATION_ID"
             android:value="${admobAppId}" />
 
+        <!-- FCM notification payload 가 icon/color 를 생략해도 런처 아이콘 전체가 흰 사각형으로
+             렌더되지 않도록, 알림 전용 단색 실루엣과 브랜드 accent 를 기본값으로 사용한다. -->
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_icon"
+            android:resource="@drawable/ic_notification" />
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_color"
+            android:resource="@color/notification_color" />
+
         <!-- GMA SDK 초기화/광고 로드 최적화 플래그.
              OPTIMIZE_INITIALIZATION: MobileAds.initialize() 를 백그라운드 스레드에서 수행,
              OPTIMIZE_AD_LOADING: 광고 로드 작업을 백그라운드 스레드로 이동.
@@ -100,6 +109,8 @@
 
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.CAMERA" />
+    <!-- 사진 첨부는 선택 기능이므로 카메라 없는 ChromeOS/태블릿도 설치 가능해야 한다. -->
+    <uses-feature android:name="android.hardware.camera" android:required="false" />
     <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <!-- record/index.vue 거리 기록 기능(navigator.geolocation.watchPosition) — 선언 없으면

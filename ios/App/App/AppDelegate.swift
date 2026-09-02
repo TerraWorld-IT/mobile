@@ -7,7 +7,8 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     var window: UIWindow?
 
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
-        // Override point for customization after application launch.
+        // 웹 폼 편집 중 기기를 흔들어도 iOS 의 시스템 실행취소/재실행 얼럿을 띄우지 않는다.
+        application.applicationSupportsShakeToEdit = false
         return true
     }
 

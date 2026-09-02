@@ -274,7 +274,7 @@ jobs:
   #   APPLE_API_KEY_ID         — App Store Connect API Key ID (10자, 예: ABCD1234EF)
   #   APPLE_API_ISSUER_ID      — Issuer ID (UUID)
   #   APPLE_API_KEY_P8_BASE64  — `base64 -w0 AuthKey_*.p8` 결과
-  #   IOS_TEAM_ID              — Apple Developer Team ID (Universal Links 와 동일)
+  #   APPLE_TEAM_ID            — Apple Developer Team ID (Universal Links 와 동일)
   #   ADMOB_APP_ID_IOS         — (선택) 실제 AdMob iOS App ID. release.xcconfig 에 append
   #                              주입. 미설정 시 테스트 App ID 폴백 + warning (릴리스 비차단).
   #
