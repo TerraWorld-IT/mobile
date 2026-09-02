@@ -44,12 +44,11 @@ fi
 # 2. NODE_ENV=production 로 config resolve
 echo
 echo "[2/4] production config resolve (NODE_ENV=production)"
-config_dump=$(cd "$MOBILE_DIR" && NODE_ENV=production npx --yes tsx -e "
-import config from './capacitor.config.ts'
-console.log(JSON.stringify(config, null, 2))
-" 2>&1 || echo "RESOLVE_FAIL")
+config_dump=$(cd "$MOBILE_DIR" && NODE_ENV=production npx --yes tsx -e \
+  "import config from './capacitor.config.ts'; console.log(JSON.stringify(config, null, 2))" \
+  2>&1 || echo "RESOLVE_FAIL")
 
-if [[ "$config_dump" == *"RESOLVE_FAIL"* ]]; then
+if [[ -z "$config_dump" || "$config_dump" == *"RESOLVE_FAIL"* ]]; then
   err "config resolve 실패 — tsx 또는 capacitor.config.ts 점검 필요"
   echo "$config_dump"
 else
