@@ -1,11 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<vector xmlns:android="http://schemas.android.com/apk/res/android"
-    android:width="24dp"
-    android:height="24dp"
-    android:viewportWidth="24"
-    android:viewportHeight="24">
-    <!-- 알림 규격(단색 흰색 + 투명 배경) 임시 심볼. 브랜드 단색 아이콘은 디자인 자산 대기. -->
-    <path
-        android:fillColor="#FFFFFFFF"
-        android:pathData="M5,3 L12,10 L19,3 L22,6 L15,13 L21,19 L18,22 L12,16 L6,22 L3,19 L9,13 L2,6 Z" />
-</vector>
+<!-- 임시 브랜드 병 실루엣: 정식 원본 수령 시 교체한다 (TerraWorld-IT/workspace#38). -->
+<bitmap xmlns:android="http://schemas.android.com/apk/res/android"
+    android:src="@drawable/ic_stat_distance"
+    android:gravity="center" />
