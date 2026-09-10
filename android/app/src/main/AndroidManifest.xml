@@ -111,7 +111,6 @@
     <uses-permission android:name="android.permission.CAMERA" />
     <!-- 사진 첨부는 선택 기능이므로 카메라 없는 ChromeOS/태블릿도 설치 가능해야 한다. -->
     <uses-feature android:name="android.hardware.camera" android:required="false" />
-    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <!-- record/index.vue 거리 기록 기능(navigator.geolocation.watchPosition) — 선언 없으면
          WebView Geolocation API 가 native 권한 프롬프트를 못 띄우고 조용히 실패한다. -->

@@ -86,9 +86,9 @@
     // 원격 URL이 응답하지 않을 때 사용자가 멍하게 기다리지 않도록 친절히 안내합니다.
     // capacitor.config.ts 의 server.errorPath 가 본 파일을 가리킨다.
 
-    // launchAutoHide: false 라 스플래시는 원격 앱이 SplashScreen.hide() 를 호출해야
-    // 사라진다. 원격 로드 실패로 이 폴백이 뜨면 hide() 호출 주체가 없어 폴백이 스플래시
-    // 뒤에 숨는다 → 여기서 직접 hide. ES5 가드 체인: 브릿지 미주입 환경(웹 브라우저,
+    // launchAutoHide: true 와 10초 워치독으로 스플래시가 자동으로 사라진다.
+    // 플러그인 접근이 가능한 환경에서는 폴백 안내가 바로 보이도록 여기서 먼저 hide.
+    // ES5 가드 체인: 브릿지 미주입 환경(웹 브라우저,
     // Android errorPath 는 플러그인 접근 불가 — Capacitor 문서)에서 안전 no-op 이며,
     // optional chaining(?.) 과 달리 구형 WebView(Chrome <80) 에서도 파싱 에러가 없다.
     var cap = window.Capacitor;
@@ -100,7 +100,7 @@
     var btn = document.getElementById('retry');
     function updateOnlineState() {
       if (navigator.onLine) {
-        msgEl.textContent = '연결되었어요. 잠시 후 자동으로 이동합니다.';
+        msgEl.textContent = '연결되었어요. 아래 “다시 시도”를 눌러 주세요.';
       } else {
         msgEl.textContent = '오프라인 상태예요. 인터넷 연결을 확인하고 다시 시도해 주세요.';
       }

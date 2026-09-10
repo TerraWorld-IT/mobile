@@ -9,8 +9,8 @@ import { existsSync, readFileSync, writeFileSync } from 'node:fs'
 
 const isDev = process.env.NODE_ENV !== 'production'
 const serverUrl = isDev
-  ? (process.env.MOBILE_SERVER_URL ?? 'http://10.0.2.2:3000')
-  : (process.env.MOBILE_PROD_URL ?? 'https://terraworld.web-qplay.kr')
+  ? (process.env.MOBILE_SERVER_URL?.trim() || 'http://10.0.2.2:3000')
+  : (process.env.MOBILE_PROD_URL?.trim() || 'https://terraworld.web-qplay.kr')
 
 const PLACEHOLDER = '__TW_SERVER_URL__'
 const targets = [

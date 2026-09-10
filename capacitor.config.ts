@@ -17,12 +17,12 @@ const config: CapacitorConfig = {
     // 프로덕션 URL 도 env 로 파라미터화 — 배포 도메인(web-qplay.kr 서브도메인)을
     // 빌드타임에 MOBILE_PROD_URL 로 주입. 미설정 시 terraworld.web-qplay.kr fallback.
     url: isDev
-      ? (process.env.MOBILE_SERVER_URL ?? 'http://10.0.2.2:3000')
-      : (process.env.MOBILE_PROD_URL ?? 'https://terraworld.web-qplay.kr'),
+      ? (process.env.MOBILE_SERVER_URL?.trim() || 'http://10.0.2.2:3000')
+      : (process.env.MOBILE_PROD_URL?.trim() || 'https://terraworld.web-qplay.kr'),
     cleartext: isDev, // Allow HTTP in dev mode
     // 원격 URL 로드 실패(오프라인 콜드스타트, 서버 장애) 시 WebView 가 webDir('www') 의
-    // 로컬 폴백 페이지로 대체된다. 미배선 시 launchAutoHide: false 스플래시의 hide() 를
-    // 호출할 주체가 없어 무한 스플래시로 고착된다 (www/index.html 은 폴백 안내 + 재시도 제공).
+    // 로컬 폴백 페이지로 대체된다. launchAutoHide: true 와 10초 워치독으로 스플래시를 내리고,
+    // www/index.html 에서 폴백 안내와 수동 재시도를 제공한다.
     errorPath: 'index.html',
   },
 
