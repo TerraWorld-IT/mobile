@@ -53,6 +53,11 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: 프로덕션 URL 검증
+        env:
+          MOBILE_PROD_URL: ${{ vars.MOBILE_PROD_URL }}
+        run: bash scripts/validate-production-url.sh
+
       # 릴리스 전 production config 가드 (scripts/preflight-release.sh):
       #   capacitor.config.json 미체크인 / production server.url / cleartext=false /
       #   AdMob 테스트 ID 검출(정보성). 스크립트 자체는 위반 시 exit 1 이지만,
@@ -298,6 +303,11 @@ jobs:
 
       - name: Install deps
         run: npm ci
+
+      - name: 프로덕션 URL 검증
+        env:
+          MOBILE_PROD_URL: ${{ vars.MOBILE_PROD_URL }}
+        run: bash scripts/validate-production-url.sh
 
       # Apple 은 iOS 26 SDK(Xcode 26+)로 빌드된 앱만 App Store Connect 업로드 허용.
       - name: Select Xcode 26 (iOS 26 SDK 필수)
