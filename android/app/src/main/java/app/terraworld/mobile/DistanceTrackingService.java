@@ -155,7 +155,8 @@ public class DistanceTrackingService extends Service {
         Notification notification = new NotificationCompat.Builder(this, CHANNEL_ID)
             .setContentTitle("거리 기록 중")
             .setContentText("TerraWorld 가 이동 거리를 기록하고 있어요")
-            .setSmallIcon(getApplicationInfo().icon)
+            // 상태바는 단색만 렌더링하므로 풀컬러 런처 아이콘이 흰 덩어리로 보이는 것을 방지한다.
+            .setSmallIcon(R.drawable.ic_stat_distance)
             .setOngoing(true)
             .build();
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {

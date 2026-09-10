@@ -17,6 +17,8 @@
 
 
     <style name="AppTheme.NoActionBarLaunch" parent="Theme.SplashScreen">
+        <!-- 임시 브랜드 스플래시 배경: 정식 원본 수령 시 교체한다 (TerraWorld-IT/workspace#38). -->
+        <item name="windowSplashScreenBackground">#FFF8EB</item>
         <item name="android:background">@drawable/splash</item>
     </style>
 </resources>
