@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/terra_widget_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#FFF8EB"
+    android:padding="8dp">
+    <ImageView
+        android:id="@+id/terra_widget_image"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:scaleType="fitCenter"
+        android:contentDescription="@string/terra_widget_name"
+        android:visibility="gone" />
+    <TextView
+        android:id="@+id/terra_widget_placeholder"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:gravity="center"
+        android:text="@string/terra_widget_placeholder"
+        android:textColor="#495D45"
+        android:textSize="14sp" />
+</FrameLayout>

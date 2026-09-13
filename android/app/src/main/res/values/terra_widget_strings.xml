@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="terra_widget_name">나의 테라</string>
+    <string name="terra_widget_placeholder">앱에서 나의 테라를 열어 주세요</string>
+</resources>

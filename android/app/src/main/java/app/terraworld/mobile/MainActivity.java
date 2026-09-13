@@ -15,6 +15,7 @@ public class MainActivity extends BridgeActivity {
         // 앱-로컬 플러그인은 Capacitor bridge 초기화(super.onCreate) 전에 등록해야 한다.
         registerPlugin(InstagramStoriesPlugin.class);
         registerPlugin(DistanceTrackerPlugin.class);
+        registerPlugin(TerraWidgetPlugin.class);
         super.onCreate(savedInstanceState);
         // BridgeActivity 는 라이브러리 레이아웃(capacitor_bridge_layout_main)을 inflate 하므로
         // activity_main.xml 의 WebView 속성은 실제로 쓰이지 않는다 — 오버스크롤 글로우 이펙트는
