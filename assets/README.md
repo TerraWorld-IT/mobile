@@ -1,17 +1,19 @@
-# 임시 브랜드 네이티브 자산
+# 디자이너 확정 네이티브 자산
 
-이 디렉토리의 PNG 원본 및 Android/iOS 파생 이미지는 **임시 브랜드 자산**이다.
-정식 디자인 원본 수령 시 교체 후 재생성한다. 추적 이슈: TerraWorld-IT/workspace#38.
-거리 전경서비스의 단색 상태바 아이콘 참조 수정은 영구 유지한다.
+이 디렉토리의 PNG 원본과 Android/iOS 파생 이미지는 **디자이너 확정 앱아이콘**(Drive `앱아이콘_애플앱스토어.png` 1024x1024,
+흰 배경 + 병·고양이)에서 생성한다(2026-09-16 교체, 이전 임시 자산 대체). 스플래시는 디자인 스펙대로
+**흰 배경에 앱아이콘 중앙 배치**이며 라이트·다크 동일하다. 거리 전경서비스의 단색 상태바 아이콘 참조는 그대로 유지한다.
 
 ## 원본과 파생물
 
-- `icon-only.png`: iOS 및 Android 레거시 런처 아이콘.
-- `icon-foreground.png`, `icon-background.png`: Android adaptive 아이콘용 병과 크림 배경.
-- `splash.png`, `splash-dark.png`: 라이트 크림 및 다크 차콜 스플래시.
-- `icon-monochrome.png`: 흰색 병 실루엣과 투명 배경. 테마 아이콘 및 알림 아이콘의 공통 원본.
+- `icon-only.png`: 디자이너 아이콘 원본 그대로(1024, RGB, 알파 없음) — iOS 및 Android 레거시 런처 아이콘.
+- `icon-foreground.png`: 원본을 RGBA 로 그대로 둔 adaptive 전경(아트워크가 캔버스의 약 45% 라 안전영역 66% 안에 든다).
+- `icon-background.png`: 흰색 단색 adaptive 배경(`values/ic_launcher_background.xml` 도 흰색).
+- `splash.png`, `splash-dark.png`: 2732x2732 흰 캔버스 중앙에 아이콘 원본(1024) 합성 — 세로폰에서 아트워크가 화면 폭의 약 37%.
+- `icon-monochrome.png`: 원본에서 흰색이 아닌 픽셀 마스크를 만들고 바깥에서 닿지 않는 구멍(흰 고양이)을 채운 병 실루엣(흰색 + 투명).
+  테마 아이콘 및 알림 아이콘의 공통 원본.
 - `android/app/src/main/res/`: 전 밀도 런처·스플래시 및 단색 아이콘 생성물.
-- `ios/App/App/Assets.xcassets/`: 기존 AppIcon/Splash 자산 세트에 생성한 아이콘과 라이트/다크 스플래시.
+- `ios/App/App/Assets.xcassets/`: AppIcon/Splash 자산 세트.
 
 ## 재생성
 
@@ -20,9 +22,14 @@
 
 ```sh
 npm ci
-npx @capacitor/assets generate --ios --android --iconBackgroundColor '#FFF8EB' --iconBackgroundColorDark '#1b1814' --splashBackgroundColor '#FFF8EB' --splashBackgroundColorDark '#1b1814'
+npx @capacitor/assets generate --ios --android --iconBackgroundColor '#FFFFFF' --iconBackgroundColorDark '#FFFFFF' --splashBackgroundColor '#FFFFFF' --splashBackgroundColorDark '#FFFFFF'
 node assets/generate-monochrome.cjs
+git checkout -- android/app/src/main/AndroidManifest.xml android/app/src/main/res/mipmap-anydpi-v26/
+node assets/verify-assets.cjs
 ```
+
+생성기는 AndroidManifest.xml 의 서식과 adaptive XML 을 다시 쓴다(monochrome 항목·`@color/ic_launcher_background`·
+`@mipmap/ic_launcher_foreground` 참조가 사라짐). 위처럼 두 경로를 되돌린 뒤 검증한다.
 
 단색 생성 스크립트는 원본의 투명 여백을 잘라낸 후, 가장 긴 변 기준으로 테마 아이콘은
 캔버스의 약 66%, 상태바 아이콘은 약 90%에 맞추어 중앙 배치한다.
@@ -36,11 +43,11 @@ Firebase 기본 알림의 `ic_notification.xml`은 같은 밀도별 `ic_stat_dis
 생성기는 AndroidManifest.xml의 서식과 adaptive XML을 다시 쓴다.
 재생성 후 Manifest의 불필요한 서식 변경을 제거하고, adaptive XML의 기존
 `@color/ic_launcher_background` 및 `@mipmap/ic_launcher_foreground` 참조를 유지한다.
-두 adaptive XML의 임시 주석 및 `<monochrome>` 항목을 유지하고,
+두 adaptive XML의 확정 주석 및 `<monochrome>` 항목을 유지하고,
 `values/ic_launcher_background.xml`의 크림색과 `values[-night]/styles.xml`의 라이트/다크
 스플래시 배경도 확인한다. 생성기가 `values-night`를 직접 만들지는 않는다.
 
-PNG 및 JSON은 주석 문법이 없으므로 이 문서와 xcassets의 안내 문서가 생성물의 임시 표식이다.
+PNG 및 JSON은 주석 문법이 없으므로 이 문서와 xcassets의 안내 문서가 생성물의 출처 표식이다.
 Android XML 및 단색 생성 스크립트에도 교체 전제 주석을 남긴다.
 
 ## WP7b 검증 기록

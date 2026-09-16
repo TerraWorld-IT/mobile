@@ -1,4 +1,4 @@
-// 임시 브랜드 단색 자산: 정식 원본 수령 시 교체 후 재생성한다 (TerraWorld-IT/workspace#38).
+// 디자이너 확정 앱아이콘의 단색(실루엣) 파생 자산 — 원본 교체 시 재생성한다 (assets/README.md).
 const fs = require('node:fs');
 const path = require('node:path');
 const sharp = require('sharp');
