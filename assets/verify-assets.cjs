@@ -1,4 +1,4 @@
-// 임시 브랜드 자산의 교체 검증 (TerraWorld-IT/workspace#38).
+// 디자이너 확정 앱아이콘·스플래시 자산의 생성물 검증 (2026-09-16 교체). 기준 커밋(baseline)과 런처 바이트가 달라졌는지도 본다.
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const cp = require('node:child_process');
@@ -18,12 +18,12 @@ async function main() {
     const old = (await parseStringPromise(cp.execFileSync('git', ['show', `${baseline}:${p}`], {encoding:'utf8'})))['adaptive-icon'];
     assert.deepEqual(parsed.background, old.background);
     assert.deepEqual(parsed.foreground, old.foreground);
-    assert.match(read(p), /임시.*workspace#38/);
+    assert.match(read(p), /디자이너 확정 자산/);
   }
   const notification = (await parseStringPromise(read(`${res}/drawable/ic_notification.xml`))).bitmap;
   assert.equal(notification.$['android:src'], '@drawable/ic_stat_distance');
   const night = (await parseStringPromise(read(`${res}/values-night/styles.xml`))).resources.style[0];
-  assert(night.item.some(x => x.$.name === 'windowSplashScreenBackground' && x._ === '#1b1814'));
+  assert(night.item.some(x => x.$.name === 'windowSplashScreenBackground' && x._ === '#FFFFFF'));
   assert(night.item.some(x => x.$.name === 'android:background' && x._ === '@drawable/splash'));
   console.log('PASS XML: adaptive 2개, 알림 1개, 야간 스타일 1개');
 
@@ -58,10 +58,18 @@ async function main() {
       const dark = `${res}/drawable-${orientation}-night-${density}/splash.png`;
       const lm = await sharp(light).metadata(), dm = await sharp(dark).metadata();
       assert.equal(lm.width,dm.width); assert.equal(lm.height,dm.height);
-      assert(!fs.readFileSync(light).equals(fs.readFileSync(dark)));
+      // 디자인 스펙(2026-09-16): 스플래시는 라이트·다크 모두 흰 배경 + 아이콘 중앙 — 두 파일이 같아도 된다.
+      // 대신 배경이 실제로 흰색인지(모서리 픽셀) 확인한다.
+      for (const p of [light, dark]) {
+        const {data, info} = await sharp(p).removeAlpha().raw().toBuffer({resolveWithObject:true});
+        for (const [x, y] of [[0,0],[info.width-1,0],[0,info.height-1],[info.width-1,info.height-1]]) {
+          const i = (y * info.width + x) * info.channels;
+          assert(data[i] === 255 && data[i+1] === 255 && data[i+2] === 255, `${p}: 모서리가 흰색이 아님`);
+        }
+      }
     }
   }
-  console.log('PASS 밀도: 런처 15개 변경, 단색 10개 크기/흰색/알파/중앙/비율, 라이트·다크 스플래시 10쌍');
+  console.log('PASS 밀도: 런처 15개 변경, 단색 10개 크기/흰색/알파/중앙/비율, 라이트·다크 스플래시 10쌍(흰 배경)');
 
   const icon = JSON.parse(read(`${ios}/AppIcon.appiconset/Contents.json`));
   assert(icon.images.some(x => x.size === '1024x1024'));
@@ -76,14 +84,15 @@ async function main() {
   const service = read('android/app/src/main/java/app/terraworld/mobile/DistanceTrackingService.java');
   assert.match(service, /setSmallIcon\(R\.drawable\.ic_stat_distance\)/);
   assert(!service.includes('getApplicationInfo().icon'));
-  assert.match(read('assets/README.md'), /임시.*브랜드/);
-  assert.match(read(`${ios}/README.md`), /임시.*브랜드/);
-  console.log('PASS iOS 1024 아이콘/스플래시 6개/다크 appearance 3개, FGS 참조, 임시 표식');
+  assert.match(read('assets/README.md'), /디자이너 확정/);
+  assert.match(read(`${ios}/README.md`), /디자이너 확정/);
+  console.log('PASS iOS 1024 아이콘/스플래시 6개/다크 appearance 3개, FGS 참조, 확정 표식');
 
-  const tracked = cp.execFileSync('git',['diff','--name-only',baseline],{encoding:'utf8'}).trim().split('\n');
+  // 작업 트리의 변경(HEAD 대비)이 자산·리소스·스플래시 설정 범위 안인지 — 생성기가 Manifest/pbxproj 를 건드린 채 남지 않게.
+  const tracked = cp.execFileSync('git',['diff','--name-only','HEAD'],{encoding:'utf8'}).trim().split('\n');
   const untracked = cp.execFileSync('git',['ls-files','--others','--exclude-standard'],{encoding:'utf8'}).trim().split('\n');
   for (const p of [...tracked,...untracked].filter(Boolean)) {
-    assert(/^(assets\/|android\/app\/src\/main\/res\/|ios\/App\/App\/Assets\.xcassets\/|android\/app\/src\/main\/java\/app\/terraworld\/mobile\/DistanceTrackingService\.java$|package(?:-lock)?\.json$)/.test(p), `범위 밖 변경: ${p}`);
+    assert(/^(assets\/|android\/app\/src\/main\/res\/|ios\/App\/App\/Assets\.xcassets\/|android\/app\/src\/main\/java\/app\/terraworld\/mobile\/DistanceTrackingService\.java$|capacitor\.config\.ts$|package(?:-lock)?\.json$)/.test(p), `범위 밖 변경: ${p}`);
   }
   console.log('PASS 변경 경로 허용 범위; 웹/Manifest/pbxproj/API 변경 0');
 }

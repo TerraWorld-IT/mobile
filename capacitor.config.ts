@@ -36,7 +36,7 @@ const config: CapacitorConfig = {
       // 일찍 걷힐 수 있음 — 무한 스플래시보다 낫다고 판단.
       launchAutoHide: true,
       launchShowDuration: 10000,
-      backgroundColor: '#FFF8EB', // riso-cream
+      backgroundColor: '#FFFFFF', // 디자인 스펙: 흰 배경 + 앱아이콘 중앙 (assets/splash.png)
       showSpinner: false,
     },
     StatusBar: {
