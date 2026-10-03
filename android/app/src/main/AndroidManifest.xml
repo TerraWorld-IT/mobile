@@ -118,9 +118,11 @@
     </queries>
 
     <uses-permission android:name="android.permission.INTERNET" />
-    <uses-permission android:name="android.permission.CAMERA" />
-    <!-- 사진 첨부는 선택 기능이므로 카메라 없는 ChromeOS/태블릿도 설치 가능해야 한다. -->
-    <uses-feature android:name="android.hardware.camera" android:required="false" />
+    <!-- CAMERA 권한은 선언하지 않는다 — frontend 가 카메라·사진 선택을 호출하지 않아(iOS 도 동일하게
+         camera 플러그인 제외) 쓰지 않는 권한이 Play 권한 심사·Data safety 부담만 만든다.
+         @capacitor/camera 패키지는 frontend 와의 Capacitor 의존성 파리티 때문에 남겨 두며, 플러그인
+         자체 매니페스트는 CAMERA 를 선언하지 않는다. 사진 첨부 도입 시 권한과
+         <uses-feature android:name="android.hardware.camera" android:required="false" /> 를 함께 복원. -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <!-- record/index.vue 거리 기록 기능(navigator.geolocation.watchPosition) — 선언 없으면
          WebView Geolocation API 가 native 권한 프롬프트를 못 띄우고 조용히 실패한다. -->

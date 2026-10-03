@@ -4,6 +4,7 @@ import android.Manifest;
 import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
@@ -152,11 +153,18 @@ public class DistanceTrackingService extends Service {
             channel.setDescription("이동 거리 기록 중 위치를 수집합니다");
             nm.createNotificationChannel(channel);
         }
+        // 알림 탭 → 기록 중인 앱으로 복귀. MainActivity 는 singleTask 라 기존 태스크를 앞으로 가져온다.
+        Intent openApp = new Intent(this, MainActivity.class)
+            .setAction(Intent.ACTION_MAIN)
+            .addCategory(Intent.CATEGORY_LAUNCHER);
+        PendingIntent contentIntent = PendingIntent.getActivity(
+            this, 0, openApp, PendingIntent.FLAG_IMMUTABLE | PendingIntent.FLAG_UPDATE_CURRENT);
         Notification notification = new NotificationCompat.Builder(this, CHANNEL_ID)
             .setContentTitle("거리 기록 중")
             .setContentText("TerraWorld 가 이동 거리를 기록하고 있어요")
             // 상태바는 단색만 렌더링하므로 풀컬러 런처 아이콘이 흰 덩어리로 보이는 것을 방지한다.
             .setSmallIcon(R.drawable.ic_stat_distance)
+            .setContentIntent(contentIntent)
             .setOngoing(true)
             .build();
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
