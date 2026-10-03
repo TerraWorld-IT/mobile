@@ -4,6 +4,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.view.View;
 import android.view.WindowManager;
+import android.webkit.CookieManager;
 import androidx.webkit.WebSettingsCompat;
 import androidx.webkit.WebViewFeature;
 import com.getcapacitor.BridgeActivity;
@@ -39,5 +40,20 @@ public class MainActivity extends BridgeActivity {
         if (WebViewFeature.isFeatureSupported(WebViewFeature.ALGORITHMIC_DARKENING)) {
             WebSettingsCompat.setAlgorithmicDarkeningAllowed(getBridge().getWebView().getSettings(), false);
         }
+    }
+
+    // WebView 는 쿠키를 주기적(약 30초)으로만 디스크에 쓴다. 로그인 직후 홈으로 내리고 프로세스가
+    // 곧바로 종료되면 세션 쿠키가 유실돼 재실행 시 로그아웃된다(에뮬레이터 실측) — 백그라운드
+    // 진입 시점에 즉시 저장한다. onStop 은 onPause 이후 쿠키가 바뀐 경우를 위한 보강.
+    @Override
+    public void onPause() {
+        super.onPause();
+        CookieManager.getInstance().flush();
+    }
+
+    @Override
+    public void onStop() {
+        super.onStop();
+        CookieManager.getInstance().flush();
     }
 }

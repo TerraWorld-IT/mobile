@@ -5,6 +5,8 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.location.LocationManager;
+import android.os.Handler;
+import android.os.Looper;
 import androidx.core.content.ContextCompat;
 import com.getcapacitor.JSArray;
 import com.getcapacitor.JSObject;
@@ -18,7 +20,9 @@ import java.util.List;
  * 거리 기록 네이티브 브리지 — 백그라운드 위치 fix 를 웹 레이어로 배출(drain)한다.
  *
  * 계약 (frontend/app/lib/nativeDistanceTracker.ts 와 동기):
- *   start({ sessionId })                          — 화면이 보일 때 호출(FGS while-in-use 시작)
+ *   start({ sessionId })                          — 화면이 보일 때 호출(FGS while-in-use 시작).
+ *                                                   서비스가 포그라운드 진입·위치 수집 등록에 성공해야
+ *                                                   resolve, 실패·시간 초과는 reject
  *   drain({ sessionId, afterSeq }) → {fixes,lastSeq} — 포그라운드 복귀 시 신규 fix 회수
  *   stop({ sessionId, afterSeq })  → {fixes,lastSeq} — 종료 + 잔여 회수
  *
@@ -27,6 +31,10 @@ import java.util.List;
  */
 @CapacitorPlugin(name = "DistanceTracker")
 public class DistanceTrackerPlugin extends Plugin {
+
+    // onStartCommand 는 메인 스레드에서 보통 수 ms 안에 끝난다. 시스템의 startForeground 기한(약 10초)
+    // 보다 짧게 잡아, 메인 스레드가 오래 막힌 경우에도 웹이 기다리지 않고 폴백하게 한다.
+    private static final long START_TIMEOUT_MS = 5000L;
 
     @PluginMethod
     public void isAvailable(PluginCall call) {
@@ -58,9 +66,32 @@ public class DistanceTrackerPlugin extends Plugin {
         }
         Intent intent = new Intent(getContext(), DistanceTrackingService.class);
         intent.putExtra("sessionId", sessionId);
+        // resolve/reject 는 서비스가 실제로 포그라운드에 진입(위치 수집 등록 포함)한 결과로 한다 —
+        // 요청 직후 resolve 하면 onStartCommand 의 startForeground 가 나중에 실패해도 웹은 성공으로
+        // 알고 웹 watch 폴백을 쓰지 않는다. 서비스 보고보다 먼저 등록해야 보고를 놓치지 않는다.
+        long token = DistanceTrackingService.START_GATE.register(sessionId, new ForegroundStartGate.Callback() {
+            @Override
+            public void onStarted() {
+                call.resolve();
+            }
+
+            @Override
+            public void onFailed(String code, Exception cause) {
+                call.reject(code, cause);
+            }
+        });
         // 화면이 보이는 상태에서 호출되는 전제(while-in-use FGS) — 웹 startDistance 버튼 경로.
-        ContextCompat.startForegroundService(getContext(), intent);
-        call.resolve();
+        try {
+            ContextCompat.startForegroundService(getContext(), intent);
+        } catch (IllegalStateException | SecurityException e) {
+            // Android 12+ 백그라운드 FGS 시작 제한(ForegroundServiceStartNotAllowedException 은
+            // IllegalStateException 하위)·권한 변경 — 앱이 죽지 않게 reject 해 웹 watch 폴백을 타게 한다.
+            DistanceTrackingService.START_GATE.reportFailed(sessionId, "foreground_service_start_failed", e);
+            return;
+        }
+        // 서비스 보고가 오지 않으면 reject — 늦게 진입한 서비스는 받을 호출이 없어 스스로 정리한다.
+        new Handler(Looper.getMainLooper()).postDelayed(
+            () -> DistanceTrackingService.START_GATE.timeout(token), START_TIMEOUT_MS);
     }
 
     @PluginMethod
@@ -100,7 +131,11 @@ public class DistanceTrackerPlugin extends Plugin {
         String active = DistanceTrackingService.getActiveSessionId();
         if (active != null && active.equals(sessionId)) {
             List<DistanceTrackingService.Fix> list = DistanceTrackingService.snapshotAfter(afterSeq);
+            // 커서는 실제로 반환한 fix 의 마지막 seq — 스냅샷 이후 큐에 추가된 fix 를 따로 읽은
+            // 큐 끝 seq 로 건너뛰면 다음 drain 에서 그 fix 가 유실된다. 빈 결과면 afterSeq 유지.
+            long cursor = afterSeq;
             for (DistanceTrackingService.Fix f : list) {
+                if (f.seq > cursor) cursor = f.seq;
                 JSObject o = new JSObject();
                 o.put("seq", f.seq);
                 o.put("time", f.time);
@@ -109,7 +144,7 @@ public class DistanceTrackerPlugin extends Plugin {
                 o.put("accuracy", f.accuracy);
                 fixes.put(o);
             }
-            ret.put("lastSeq", DistanceTrackingService.lastSeq());
+            ret.put("lastSeq", cursor);
         } else {
             // 세션 불일치 — 유령 데이터 배출 금지 (웹이 하한 보정으로 폴백).
             ret.put("lastSeq", afterSeq);

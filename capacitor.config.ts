@@ -101,6 +101,26 @@ const config: CapacitorConfig = {
     backgroundColor: '#FFF8EB',
     // iOS 블록과 동일 — WebView UA 에 앱 식별자 append (서버/분석 트래픽 구분).
     appendUserAgent: 'TerraWorldApp',
+    // Google Play 첫 출시도 iOS 와 같이 광고·결제를 제외한다 — 전역 includePlugins 를 덮어쓰는
+    // allowlist 라 package.json 의존성이 늘어도 Android 에 자동 포함되지 않는다(새 플러그인은 여기에도 추가).
+    // - '@capacitor-community/admob' 제외: GMA SDK 가 병합 매니페스트에 AD_ID·ACCESS_ADSERVICES_*
+    //   권한을 넣어 Play 광고 ID 선언·Data safety 의 광고 항목을 요구한다.
+    // - 'cordova-plugin-purchase' 제외: Play Billing 라이브러리가 BILLING 권한을 넣는다. iOS 는
+    //   release.yml 'iOS IAP gate' 때문에 유지하지만 Android 쪽 release.yml 에는 해당 검사가 없다.
+    // - '@capacitor/camera' 제외: frontend 호출 0건인데 CameraX 네이티브 라이브러리(.so)가 딸려 온다.
+    // 도입 시 각 항목을 복원하고 AndroidManifest 의 AdMob APPLICATION_ID meta-data·build.gradle 의
+    // admobAppId placeholder(docs/admob-config.md)를 함께 되살린다.
+    includePlugins: [
+      '@capacitor/app',
+      '@capacitor/filesystem',
+      '@capacitor/haptics',
+      '@capacitor/keyboard',
+      '@capacitor/network',
+      '@capacitor/push-notifications',
+      '@capacitor/share',
+      '@capacitor/splash-screen',
+      '@capacitor/status-bar',
+    ],
   },
 }
 
