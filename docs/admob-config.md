@@ -10,6 +10,11 @@ Source: UltraPlan 2026-05-16 v2 § 1 M4 + § 3 M4
 > **iOS 광고 도입 시 복원용 참고**이며 현재 iOS 빌드에는 적용되지 않는다. 복원 시: includePlugins 에 admob
 > 추가 → `npx cap sync ios` → Info.plist 에 `GADApplicationIdentifier`·ATT 문구·`SKAdNetworkItems`
 > 복원 → PrivacyInfo.xcprivacy·App Store Connect 개인정보 설문 재검토. Android 는 변경 없음.
+>
+> 같은 시점에 iOS 에서 `@capacitor/camera` 도 제외했다(frontend 호출 0건). 따라서 `Info.plist` 의
+> `NSCameraUsageDescription`·`NSPhotoLibraryUsageDescription` 도 없고, `PrivacyInfo.xcprivacy` 는 광고·분석·
+> 사진·구매 이력·연락처 항목 없이 실제 수집(이메일·회원 ID·사용자 콘텐츠·피트니스·기타) 5종만 선언한다.
+> 광고 도입 시에는 광고 식별자(DeviceID)·광고 목적 수집 항목도 매니페스트와 설문에 함께 추가해야 한다.
 
 ## 현재 상태 (2026-05-16 기준)
 

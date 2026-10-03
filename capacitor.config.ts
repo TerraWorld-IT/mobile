@@ -62,9 +62,11 @@ const config: CapacitorConfig = {
     // cordova-plugin-purchase 는 release.yml 의 'iOS IAP gate' 가 cap sync 결과를 검사하므로 유지.
     // iOS 에 광고를 도입하는 시점에 '@capacitor-community/admob' 복원 + Info.plist 의
     // GADApplicationIdentifier·ATT 문구·SKAdNetworkItems 를 함께 되살린다.
+    // '@capacitor/camera' 도 뺐다 — frontend 가 카메라·사진 선택을 호출하지 않아 쓰지 않는 권한
+    // 문구(NSCameraUsageDescription 등)가 심사 사유가 될 수 있다. 사진 첨부 도입 시 복원 +
+    // Info.plist 권한 문구·PrivacyInfo.xcprivacy 의 PhotosorVideos 를 함께 되살린다 (Android 는 그대로).
     includePlugins: [
       '@capacitor/app',
-      '@capacitor/camera',
       '@capacitor/filesystem',
       '@capacitor/haptics',
       '@capacitor/keyboard',
