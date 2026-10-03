@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Android 11(API 30) 이하 백업 규칙 — AndroidManifest 의 android:fullBackupContent 가 참조.
+     allowBackup=false 와 함께 앱 데이터 전체(WebView 쿠키·저장소 포함)를 백업에서 제외한다.
+     Android 12+ 는 data_extraction_rules.xml 이 적용된다. -->
+<full-backup-content>
+    <exclude domain="root" path="." />
+    <exclude domain="file" path="." />
+    <exclude domain="database" path="." />
+    <exclude domain="sharedpref" path="." />
+    <exclude domain="external" path="." />
+    <exclude domain="device_root" path="." />
+    <exclude domain="device_file" path="." />
+    <exclude domain="device_database" path="." />
+    <exclude domain="device_sharedpref" path="." />
+</full-backup-content>

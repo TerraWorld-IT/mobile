@@ -32,13 +32,9 @@ android {
         versionCode computedVersionCode
         versionName computedVersionName
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
-        // UltraPlan M4 — AdMob app ID 주입.
-        // CI 가 `-PADMOB_APP_ID=ca-app-pub-<real>~<real>` 로 inject. 미주입 시 Google
-        // 공식 test App ID 폴백 (어뷰징 방지 정책 준수, 실 사용자에게 노출 0).
-        // 본 placeholder 는 AndroidManifest.xml 의 <meta-data android:value="${admobAppId}"/> 로 치환.
-        manifestPlaceholders = [
-            admobAppId: (project.findProperty('ADMOB_APP_ID') ?: 'ca-app-pub-3940256099942544~3347511713')
-        ]
+        // AdMob App ID placeholder(admobAppId)는 두지 않는다 — 첫 출시는 광고 제외라 AdMob 플러그인과
+        // 매니페스트 meta-data 가 없다(capacitor.config.ts android.includePlugins). release.yml 이 넘기는
+        // -PADMOB_APP_ID 는 읽는 곳이 없어 무시된다. 광고 도입 시 복원 (docs/admob-config.md).
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
              // Default: https://android.googlesource.com/platform/frameworks/base/+/282e181b58cf72b6ca770dc7ca5f91f135444502/tools/aapt/AaptAssets.cpp#61
@@ -60,6 +56,10 @@ android {
                 keyPassword keyPwd
             }
         }
+    }
+    // 저장소 루트 tests/android 의 JVM 단위 테스트(안드로이드 의존성 없는 분리 로직)도 ./gradlew test 에 포함한다.
+    sourceSets {
+        test.java.srcDirs += '../../tests/android/java'
     }
     buildTypes {
         release {

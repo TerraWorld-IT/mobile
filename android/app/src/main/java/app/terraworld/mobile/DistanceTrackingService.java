@@ -18,6 +18,7 @@ import android.os.IBinder;
 import androidx.annotation.NonNull;
 import androidx.core.app.NotificationCompat;
 import androidx.core.content.ContextCompat;
+import androidx.core.location.LocationListenerCompat;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ConcurrentLinkedDeque;
@@ -63,6 +64,9 @@ public class DistanceTrackingService extends Service {
     private static final AtomicLong SEQ = new AtomicLong(0);
     private static volatile String activeSessionId = null;
 
+    /** 플러그인 start 호출에 서비스의 실제 시작 결과를 전달한다 (DistanceTrackerPlugin.start). */
+    static final ForegroundStartGate START_GATE = new ForegroundStartGate();
+
     private LocationManager locationManager;
     private LocationListener listener;
 
@@ -77,11 +81,6 @@ public class DistanceTrackingService extends Service {
             if (f.seq > afterSeq) out.add(f);
         }
         return out;
-    }
-
-    public static long lastSeq() {
-        Fix last = QUEUE.peekLast();
-        return last != null ? last.seq : SEQ.get();
     }
 
     public static void resetForSession(String sessionId) {
@@ -127,13 +126,39 @@ public class DistanceTrackingService extends Service {
             return START_NOT_STICKY;
         }
         resetForSession(sessionId);
-        startInForeground();
+        try {
+            startInForeground();
+        } catch (IllegalStateException | SecurityException e) {
+            // Android 12+ 백그라운드 FGS 시작 제한(ForegroundServiceStartNotAllowedException 은
+            // IllegalStateException 하위)·Android 14+ location 타입 권한 미충족(SecurityException).
+            // 앱이 죽지 않게 정리 후 종료하고, 대기 중인 플러그인 start 를 reject 해 웹 watch 폴백을 타게 한다.
+            abortStart(startId);
+            START_GATE.reportFailed(sessionId, "foreground_service_start_failed", e);
+            return START_NOT_STICKY;
+        }
         // 재시작(새 세션) 시 기존 listener 를 먼저 제거 — 미제거 시 listener 가 누적 등록되어
         // 같은 fix 가 중복 수집된다 (Codex R1 F1).
         stopLocationUpdates();
-        startLocationUpdates();
+        if (!startLocationUpdates()) {
+            abortStart(startId);
+            START_GATE.reportFailed(sessionId, "location_updates_failed", null);
+            return START_NOT_STICKY;
+        }
+        if (!START_GATE.reportStarted(sessionId)) {
+            // 받을 start 호출이 없다 — 플러그인이 시간 초과로 이미 reject 했거나 새 start 로 대체됐다.
+            // 웹은 이 세션을 쓰지 않으므로 유령 수집이 되지 않게 정리한다. stopSelf(startId) 라 뒤에
+            // 큐잉된 새 세션 start 가 있으면 서비스는 유지되고 그 start 가 세션을 다시 연다.
+            abortStart(startId);
+        }
         // 프로세스 kill 시 재시작하지 않는다 — 세션 상태(웹 레이어)와 어긋난 유령 수집 방지.
         return START_NOT_STICKY;
+    }
+
+    /** 시작 실패·무효 시 정리 — 세션이 비워져 drain 이 빈 결과를 돌려준다. */
+    private void abortStart(int startId) {
+        stopLocationUpdates();
+        clearSession();
+        stopSelf(startId);
     }
 
     @Override
@@ -174,14 +199,17 @@ public class DistanceTrackingService extends Service {
         }
     }
 
-    private void startLocationUpdates() {
+    /** 위치 수집 등록. 실패하면 false — 호출부가 정리하고 start 를 reject 한다. */
+    private boolean startLocationUpdates() {
         boolean fine = ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
             == PackageManager.PERMISSION_GRANTED;
         if (!fine || locationManager == null) {
-            stopSelf();
-            return;
+            return false;
         }
-        listener = new LocationListener() {
+        // LocationListenerCompat: onStatusChanged/onProviderEnabled/onProviderDisabled 의 기본 구현을
+        // 제공한다. 플랫폼 LocationListener 는 API 30 미만에서 이 메서드들이 추상이라 onLocationChanged
+        // 만 구현하면 GPS on/off 시 AbstractMethodError 로 죽을 수 있다 (minSdk 24).
+        listener = new LocationListenerCompat() {
             @Override
             public void onLocationChanged(@NonNull Location location) {
                 if (QUEUE.size() >= MAX_QUEUE) QUEUE.pollFirst();
@@ -199,9 +227,12 @@ public class DistanceTrackingService extends Service {
             // 플랫폼 LocationManager 사용 (FusedLocationProvider 미도입).
             locationManager.requestLocationUpdates(
                 LocationManager.GPS_PROVIDER, 3000L, 5f, listener);
-        } catch (SecurityException e) {
-            stopSelf();
+        } catch (SecurityException | IllegalArgumentException e) {
+            // IllegalArgumentException: 기기에 GPS provider 가 없는 경우.
+            listener = null;
+            return false;
         }
+        return true;
     }
 
     private void stopLocationUpdates() {
