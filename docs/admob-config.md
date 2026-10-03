@@ -3,6 +3,14 @@
 Last updated: 2026-05-16
 Source: UltraPlan 2026-05-16 v2 § 1 M4 + § 3 M4
 
+> **iOS 는 첫 출시에서 광고 제외 (2026-10-03 결정).** `capacitor.config.ts` 의 `ios.includePlugins` 가
+> `@capacitor-community/admob` 을 뺀 allowlist 라 iOS 빌드(Package.swift)에는 AdMob 네이티브 SDK 가 없고,
+> `Info.plist` 에서도 `GADApplicationIdentifier`·`NSUserTrackingUsageDescription` 을 제거했다
+> (ATT 설명 문구만 있고 요청이 없으면 App Store 가이드라인 5.1.2 반려 소지). 아래 iOS 절의 설정은
+> **iOS 광고 도입 시 복원용 참고**이며 현재 iOS 빌드에는 적용되지 않는다. 복원 시: includePlugins 에 admob
+> 추가 → `npx cap sync ios` → Info.plist 에 `GADApplicationIdentifier`·ATT 문구·`SKAdNetworkItems`
+> 복원 → PrivacyInfo.xcprivacy·App Store Connect 개인정보 설문 재검토. Android 는 변경 없음.
+
 ## 현재 상태 (2026-05-16 기준)
 
 `mobile/capacitor.config.ts` 의 `AdMob` 플러그인 설정은 **test 환경만** 명시:
