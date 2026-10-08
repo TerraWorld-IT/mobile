@@ -6,9 +6,5 @@
 // `Configuration Settings File` 을 본 파일로 지정해야 효과 있음.
 CAPACITOR_DEBUG = false
 
-// UltraPlan M4 — AdMob App ID.
-// CI release build 시 secret 으로 overwrite (xcconfig override). 미주입 시 Google
-// 공식 test App ID 폴백 — 어뷰징 방지 + 실 사용자 노출 0. release.yml ios-release job
-// 의 step 이 `printf 'ADMOB_APP_ID = $ADMOB_APP_ID_PROD\n' >> release.xcconfig` 로
-// append (또는 별도 ci-overrides.xcconfig 생성 후 include).
-ADMOB_APP_ID = ca-app-pub-3940256099942544~1458002511
+// AdMob App ID는 App/Info.plist의 공식 테스트 ID가 기본값이다.
+// release.yml이 ADMOB_IOS_APP_ID 시크릿을 PlistBuddy로 주입하고 archive를 검사한다.
