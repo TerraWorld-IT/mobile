@@ -2,7 +2,7 @@
 
 갱신: 2026-10-08. iOS에 기존 토큰 보상형 광고 SDK와 ATT 설정을 복원했다. 배너·전면 광고, 카메라·사진 읽기, 별도 분석 SDK는 도입하지 않는다. Android 광고·결제 제외 정책은 그대로다. iOS IAP 플러그인과 릴리스 IAP gate도 유지한다.
 
-저장소 설정과 서명 전 검사를 구현한 상태이며 macOS 빌드·TestFlight·실기기 광고 시청은 미검증이다. 기능 노출과 보상 지급은 별도 frontend 작업 `ios-widget-ads-frontend`(iOS 진입점, 광고 단위 ID, ATT 결과에 따른 광고 요청)와 함께 검증해야 한다. 네이티브 SDK 포함만으로 사용자 기능 완료를 뜻하지 않는다.
+저장소 설정과 서명 전 검사를 구현했다. main `1815b7a`의 [Mobile CI run 37749716607](https://github.com/TerraWorld-IT/mobile/actions/runs/37749716607)에서 iOS Build Check의 macOS 무서명 시뮬레이터 빌드가 성공했다. `TerraWidgetExtension.appex`가 `App.app/PlugIns`에 포함됐고, `GoogleMobileAds`·`UserMessagingPlatform` framework가 링크됐다. 서명 archive·TestFlight·실기기 광고 시청은 미검증이다. 기능 노출과 보상 지급은 별도 frontend 작업 `ios-widget-ads-frontend`(iOS 진입점, 광고 단위 ID, ATT 결과에 따른 광고 요청)와 함께 검증해야 한다. 네이티브 SDK 포함만으로 사용자 기능 완료를 뜻하지 않는다.
 
 ## 두 종류의 ID와 주입 위치
 
@@ -14,7 +14,7 @@
 
 `release.yml`과 `ios-lan-test.yml`은 앱 plist만 덮어쓰며, 과거 `ADMOB_APP_ID_IOS`/xcconfig append 경로를 사용하지 않는다. archive 안의 App ID가 입력값과 일치하고 테스트 ID가 아닌지, `PlugIns/TerraWidgetExtension.appex`와 실행 파일이 포함됐는지 검사한 뒤 export/upload한다. 테스트 광고 요청 자체는 frontend 개발 설정으로 선택한다.
 
-운영 URL의 로컬 동기화는 `NODE_ENV=production npx cap sync ios`로 실행한다(PowerShell: `$env:NODE_ENV='production'; npx cap sync ios`). `ios/App/App/capacitor.config.json`은 기존 Git 제외 산출물이며 `https://terraworld.web-qplay.kr`, `cleartext: false`를 확인한다. Windows CLI가 생성하는 `Package.swift` 경로의 역슬래시는 macOS에서 해석되지 않으므로 커밋 전 `/`로 정규화한다. Cordova IAP 패키지는 sync가 재생성한다.
+운영 URL의 로컬 동기화는 `NODE_ENV=production npx cap sync ios`로 실행한다(PowerShell: `$env:NODE_ENV='production'; npx cap sync ios`). `ios/App/App/capacitor.config.json`은 기존 Git 제외 산출물이며 `https://terraworld.web-qplay.kr`, `cleartext: false`를 확인한다. 체크인된 `Package.swift`는 도입 전 main의 형태(`.iOS(.v15)`, forward-slash 경로와 NOTE 주석 유지)에 AdMob package·product 두 줄만 추가한다. Windows CLI가 생성하는 역슬래시 경로는 macOS용 `/`로 정규화한다. `CordovaPluginPurchase`와 Camera 패키지·product 항목은 체크인하지 않으며 Capacitor 코어의 `Cordova` product는 유지한다. IAP용 `CordovaPluginPurchase` 항목은 CI의 `cap sync`가 재생성하고 `release.yml`의 IAP 게이트가 이를 검사한다. App의 배포 대상은 이미 iOS 16.4이므로 패키지의 `.v15` 표기로 설치 가능한 기기가 바뀌지 않는다.
 
 ## ATT와 개인정보 선언
 

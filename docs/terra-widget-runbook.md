@@ -1,6 +1,6 @@
 # 나의 테라 홈스크린 위젯 MVP
 
-상태(2026-10-08): iOS App Extension 타깃·App Group·플러그인 등록 및 서명 워크플로 연결을 구현했다. macOS 컴파일·서명·실기기 표시는 미검증이다. Android는 기존 소스·등록·debug APK 빌드 상태를 유지하며 이번 변경 범위 밖이다. 앱에서 마지막으로 렌더링한 테라리움 PNG를 보여주며 앱을 열지 않은 동안 서버의 성장 상태를 가져오지 않는다.
+상태(2026-10-08): iOS App Extension 타깃·App Group·플러그인 등록 및 서명 워크플로 연결을 구현했다. main `1815b7a`의 Mobile CI run `37749716607`에서 macOS 무서명 시뮬레이터 빌드가 성공했다. 서명 archive·TestFlight·실기기 표시는 미검증이다. Android는 기존 소스·등록·debug APK 빌드 상태를 유지하며 이번 변경 범위 밖이다. 앱에서 마지막으로 렌더링한 테라리움 PNG를 보여주며 앱을 열지 않은 동안 서버의 성장 상태를 가져오지 않는다.
 
 ## 데이터 경로와 경계
 
@@ -86,13 +86,14 @@ xcodebuild build -project ios/App/App.xcodeproj -scheme App -sdk iphonesimulator
 
 ## 검증 기록
 
-2026-10-08 Windows: `npm ci`, production `npx cap sync ios`, `npx cap ls` 성공. `Package.swift`는 실제 sync 결과의 경로 구분자만 macOS용으로 정규화했다. `node --test tests/check-capacitor-sync.test.mjs` 10/10 통과. Node 24에서 `node --test tests/`는 디렉터리를 모듈로 해석해 실패하므로 `rg --files tests -g '*.test.mjs'`로 수집한 전체 Node 테스트 파일을 실행하여 10/10 통과했다. Android Java 테스트는 이번 범위 밖이다.
+2026-10-08 Windows: `npm ci`, production `npx cap sync ios`, `npx cap ls` 성공. 체크인된 `Package.swift`는 도입 전 main의 형태(`.iOS(.v15)`, forward-slash 경로와 NOTE 주석 유지)에 AdMob package·product 두 줄만 추가했다. `CordovaPluginPurchase`와 Camera 패키지·product 항목은 체크인하지 않는다. Capacitor 코어의 `Cordova` product는 유지하며, IAP용 `CordovaPluginPurchase` 항목은 CI의 `cap sync`가 재생성하고 `release.yml`의 IAP 게이트가 이를 검사한다. App의 배포 대상은 이미 iOS 16.4이므로 패키지의 `.v15` 표기로 설치 가능한 기기가 바뀌지 않는다. `node --test tests/check-capacitor-sync.test.mjs` 10/10 통과. Node 24에서 `node --test tests/`는 디렉터리를 모듈로 해석해 실패하므로 `rg --files tests -g '*.test.mjs'`로 수집한 전체 Node 테스트 파일을 실행하여 10/10 통과했다. Android Java 테스트는 이번 범위 밖이다.
 
 pbxproj 파서로 66개 객체의 24자리 ID·중복·미정의 참조 및 타깃별 소스·의존성·embed·서명 설정 검사 통과. plist/entitlements/xcprivacy 5개를 Python plistlib로 파싱했다. 세 워크플로의 YAML 및 56개 run 블록 bash 문법 검사 통과. 임시 fixture로 App ID 27건, 서명 시크릿 8건, 프로파일 18건, archive 6건의 허용/차단 경계를 확인했다. 실제 Apple 서명·SDK 실행 검증은 아니다.
 
+2026-10-08 macOS: main `1815b7a`의 [Mobile CI run 37749716607](https://github.com/TerraWorld-IT/mobile/actions/runs/37749716607)에서 iOS Build Check가 **BUILD SUCCEEDED**로 종료했다. 무서명 시뮬레이터 빌드의 `App.app/PlugIns`에 `TerraWidgetExtension.appex`가 포함됐고(`embeddedBinaryValidationUtility`), Extension 실행 파일의 `test -f` 검사도 통과했다. `GoogleMobileAds`·`UserMessagingPlatform` framework 링크를 확인했다. 이 결과는 서명 archive·TestFlight·실기기 실행 증거를 포함하지 않는다.
 
 2026-09-13 Windows: `assembleDebug` **exit 0**, `BUILD SUCCESSFUL in 1m 31s`, `431 actionable tasks: 246 executed, 185 from cache`; Java 컴파일·리소스/manifest 처리·APK 패키징 수행. 기존 flatDir 경고와 일부 native library strip 불가 안내가 있었다. `node scripts/check-capacitor-sync.mjs` **exit 0**, 공유 의존 12개 일치; mobile-only assets 1개 안내. 상세 frontend 결과 및 최초 실패/재실행은 workspace `scratchpad/audit-2026-09-12/report-P7-widget.md`에 기록한다.
 
-iOS 컴파일·서명·App Group 접근·위젯 배포, Android/iOS 실기기 위젯 표시, 운영 원격 frontend 배포 및 홈/공유/푸시/딥링크 실기기 회귀는 **미검증**이다. 정적 source/로컬 APK 빌드를 전체 기능 PASS로 확대하지 않는다.
+iOS 서명 archive·TestFlight·실기기 App Group 접근·위젯 배포, Android/iOS 실기기 위젯 표시, 운영 원격 frontend 배포 및 홈/공유/푸시/딥링크 실기기 회귀는 **미검증**이다. 정적 source/로컬 APK 빌드와 iOS 무서명 시뮬레이터 빌드를 전체 기능 PASS로 확대하지 않는다.
 
 공식 계약 참고: [Android 기본 위젯](https://developer.android.com/develop/ui/views/appwidgets), [Android 갱신](https://developer.android.com/develop/ui/views/appwidgets/advanced), [Apple TimelineProvider](https://developer.apple.com/documentation/widgetkit/timelineprovider), [WidgetKit 갱신 예산](https://developer.apple.com/documentation/widgetkit/keeping-a-widget-up-to-date/).
