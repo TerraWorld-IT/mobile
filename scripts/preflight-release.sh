@@ -8,7 +8,7 @@
 #   1. NODE_ENV=production 환경에서 capacitor.config.ts 가 resolve 하는 server.url
 #      이 https://terraworld.web-qplay.kr 인지
 #   2. cleartext = false 인지
-#   3. AdMob test ID (ca-app-pub-3940256099942544) 가 없는지
+#   3. AdMob 테스트 ID 위치 안내 (운영 ID 검사는 release.yml의 archive 검사에서 수행)
 #   4. capacitor.config.json 이 체크인 됐는지 (gitignore 회피 검출)
 #
 # 플랫폼 호환성 (DX-002):
@@ -76,10 +76,10 @@ fi
 
 # 5. (옵션) AdMob test ID 검출
 echo
-echo "[5/4] AdMob test ID 검출 (다음 단계는 release.xcconfig + manifest 차원)"
+echo "[참고] AdMob 테스트 ID 위치 (iOS 기본값: App/Info.plist)"
 if grep -rn "ca-app-pub-3940256099942544" "$MOBILE_DIR/android" "$MOBILE_DIR/ios" 2>/dev/null \
     | grep -v "node_modules" | grep -v "\.git/" | head -5; then
-  echo "  (위 hit 가 release 빌드 산출물 안에 있으면 fail. source 만 hit 면 OK — UltraPlan M4)"
+  echo "  iOS 소스의 테스트 ID는 정상. release.yml이 ADMOB_IOS_APP_ID를 PlistBuddy로 주입하고 archive에서 검증한다."
 fi
 
 echo

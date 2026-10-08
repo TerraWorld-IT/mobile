@@ -44,7 +44,9 @@ const config: CapacitorConfig = {
       backgroundColor: '#FFF8EB', // riso-cream
     },
     Keyboard: {
-      resize: 'body',
+      // iOS 전용: frontend app/plugins/capacitor.client.ts의 런타임
+      // Keyboard.setResizeMode(native)와 같은 값으로 정렬한다.
+      resize: 'native',
     },
     PushNotifications: {
       presentationOptions: ['badge', 'sound', 'alert'],

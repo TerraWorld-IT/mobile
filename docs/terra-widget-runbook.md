@@ -47,10 +47,10 @@
 3. Extension App ID **`app.terraworld.mobile.TerraWidgetExtension`**을 생성하고 같은 App Group을 부여한다.
 4. 동일한 기존 Distribution 인증서로 App Store 프로파일을 발급한다. App은 App Group 추가 후 **`TerraWorld App Store`** 이름으로 재발급하고, Extension은 **`TerraWorld Widget App Store`** 이름으로 신규 발급한다. 두 프로파일의 이름·팀·앱 ID·App Group·유효기간이 CI 검사와 일치해야 한다.
 5. GitHub Actions secrets를 설정한다. **`APPLE_PROVISIONING_PROFILE_BASE64`**는 재발급 App 프로파일로 교체하고 **`APPLE_WIDGET_PROVISIONING_PROFILE_BASE64`**는 Extension 프로파일로 추가한다. 기존 `APPLE_DISTRIBUTION_CERT_P12_BASE64`, `APPLE_DISTRIBUTION_CERT_PASSWORD`, `APPLE_TEAM_ID=SMF6T723XR` 및 업로드용 `APPLE_API_KEY_ID`, `APPLE_API_ISSUER_ID`, `APPLE_API_KEY_P8_BASE64`를 확인한다.
-6. AdMob에서 iOS 앱을 등록하고 App ID를 GitHub secret **`ADMOB_IOS_APP_ID`**에 설정한다. `ca-app-pub-<16자리>~<10자리>` 형식이며 Google 테스트 퍼블리셔는 서명 릴리스에서 거부된다. iOS 보상형 광고 단위를 발급하고 별도 frontend 작업 `ios-widget-ads-frontend`의 iOS 광고 단위 설정에 전달한다. Android 광고 단위나 App ID를 대신 쓰지 않는다.
+6. AdMob에서 iOS 앱을 등록하고 App ID를 GitHub secret **`ADMOB_IOS_APP_ID`**에 설정한다. `ca-app-pub-<16자리>~<10자리>` 형식이며 Google 테스트 퍼블리셔는 `release.yml`의 운영 릴리스에서 거부된다. LAN TestFlight 빌드는 이 시크릿이 없어도 Info.plist의 공식 테스트 App ID를 사용한다. iOS 보상형 광고 단위를 발급하고 별도 frontend 작업 `ios-widget-ads-frontend`의 iOS 광고 단위 설정에 전달한다. Android 광고 단위나 App ID를 대신 쓰지 않는다.
 7. AdMob 보상형 광고 단위의 SSV 콜백 URL을 운영 백엔드의 기존 보상형 콜백 주소로 설정하고 검증한다. **실제 운영 URL은 백엔드 담당자가 확인한 값**을 사용한다. 백엔드 **`REWARD_AD_SSV_AD_UNIT_ALLOWLIST`**에 새 iOS 광고 단위 ID를 추가한다. 현재 `reward.ad.mode` 기본값은 `legacy`이며 이번 작업은 이를 변경하지 않는다. SSV-authoritative 운영 전환 시 nonce 검증·중복 지급 방지·콜백 도달을 별도로 확인한다.
 8. App Store에 등록한 개발자 웹사이트 도메인의 `/app-ads.txt`에 AdMob 콘솔이 제공하는 판매자 항목을 게시하고 크롤링/앱 인증 상태를 확인한다. 제공 지역에 필요한 광고 동의 설정도 점검한다.
-9. App Store Connect 개인정보 라벨에 추적·광고 식별자·광고 상호작용·대략적 위치·진단 데이터의 수집 목적/연결/추적 여부를 **SDK 수집분 포함**하여 반영한다. 앱 코드는 추적 도메인에 직접 연결하지 않으므로 앱 매니페스트는 `NSPrivacyTracking=false`와 빈 `NSPrivacyTrackingDomains` 배열을 사용하고, Google Mobile Ads SDK의 추적·도메인 선언은 SDK 자체 매니페스트가 담당한다. DeviceID 등 수집 데이터 유형의 추적 선언은 유지한다. Xcode에서 SDK를 포함한 Privacy Report와 대조하고 개인정보처리방침도 실제 동작과 맞춘다.
+9. App Store Connect 개인정보 라벨에 추적·광고 식별자·광고 상호작용·대략적 위치·진단 데이터의 수집 목적/연결/추적 여부를 **SDK 수집분 포함**하여 반영한다. 앱 코드는 추적 도메인에 직접 연결하지 않으므로 앱 매니페스트는 `NSPrivacyTracking=false`와 빈 `NSPrivacyTrackingDomains` 배열을 사용하고, Google Mobile Ads SDK의 추적·도메인 선언은 SDK 자체 매니페스트가 담당한다. 앱 매니페스트는 앱 코드가 직접 수집하는 기존 5종과 FileTimestamp 사유만 선언한다. DeviceID·AdvertisingData·ProductInteraction·CrashData·PerformanceData·OtherDiagnosticData는 앱 매니페스트에서 중복 제거하고 Google Mobile Ads·UMP SDK 자체 매니페스트와 ASC 라벨에서 관리한다. Xcode에서 SDK를 포함한 Privacy Report와 대조하고 개인정보처리방침도 실제 동작과 맞춘다.
 10. frontend와 mobile 두 작업 단위의 독립 수용 검토 후 PR을 main에 머지하고, main push로 실행되는 **mobile-ci → iOS Build Check** 결과를 확인한다. 이 job은 PR이나 develop push에서는 실행되지 않는다. iOS 시뮬레이터 빌드가 실패하면 수정 PR로 보완한다. 사람 자원과 아래 실기기 검증이 준비된 다음 별도 승인된 단계에서만 태그·TestFlight·App Review 재제출을 진행한다.
 11. TestFlight 업로드 후 App Store Connect의 ITMS 개인정보 경고 메일을 확인하고, 경고가 있으면 앱·SDK 매니페스트와 Privacy Report를 대조하여 해소한다.
 
@@ -63,7 +63,7 @@ NODE_ENV=production npx cap sync ios
 xcodebuild build -project ios/App/App.xcodeproj -scheme App -sdk iphonesimulator -configuration Debug -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO
 ```
 
-`release.yml`과 `ios-lan-test.yml`은 같은 App·Extension 프로파일 설치·운영 App ID 주입·archive 검사를 수행한다. LAN은 기존 개발 서버 URL·버전·TestFlight 업로드 흐름을 유지하지만 이제 위 사람 작업의 서명 시크릿과 운영 App ID가 모두 필요하다. App Group이 없는 옛 프로파일로는 archive 전에 실패한다. CI의 입력 검사는 실제 Apple 서명 유효성 검증을 대체하지 않는다.
+`release.yml`과 `ios-lan-test.yml`은 App·Extension 프로파일 설치와 archive의 위젯 포함 검사를 수행한다. 운영 App ID의 필수·형식·테스트 퍼블리셔 거부 검사는 `release.yml`에만 둔다. LAN은 기존 개발 서버 URL·버전·TestFlight 업로드 흐름을 유지하며, 선택 시크릿 `ADMOB_IOS_APP_ID`가 없으면 Info.plist의 공식 테스트 ID를 그대로 쓴다. LAN archive는 App ID가 앱 plist 설정과 일치하는지 검사한다. 업로드 API 키·Distribution 인증서·두 프로파일은 LAN에서도 필수다. App Group이 없는 옛 프로파일로는 archive 전에 실패한다. 준비 방법은 위 사람 작업 1~5를 따른다. CI의 입력 검사는 실제 Apple 서명 유효성 검증을 대체하지 않는다.
 
 다음 항목은 모두 TestFlight·실기기 전 **NOT_RUN**이다. 시뮬레이터 빌드 성공만으로 PASS 처리하지 않는다.
 
@@ -82,7 +82,7 @@ xcodebuild build -project ios/App/App.xcodeproj -scheme App -sdk iphonesimulator
 | 잠금·재부팅·앱 종료 | 최초 잠금 해제 이후 PNG 접근, OS 캐시/갱신 지연 확인 | NOT_RUN |
 | 기존 기능 회귀 | 공유·Instagram·푸시·딥링크·스와이프 동작 | NOT_RUN |
 
-이미지는 백업 제외·최초 잠금 해제 이후 접근 정책을 유지한다. OS가 캐시한 위젯 이미지는 로그아웃 직후 즉시 사라진다고 보장할 수 없다. 키보드 수정의 기존 iPhone 실기기 확인 **PARTIAL** 상태는 별도로 유지한다.
+이미지는 백업 제외·최초 잠금 해제 이후 접근 정책을 유지한다. OS가 캐시한 위젯 이미지는 로그아웃 직후 즉시 사라진다고 보장할 수 없다. `capacitor.config.ts`의 iOS 전용 `Keyboard.resize`는 frontend 런타임 `Keyboard.setResizeMode(native)`와 같은 `native`로 정렬했다. 이 설정과 정리된 앱 개인정보 매니페스트는 다음 iOS 바이너리에 포함된다. 키보드 수정의 기존 iPhone 실기기 확인 **PARTIAL** 상태는 별도로 유지한다.
 
 ## 검증 기록
 
