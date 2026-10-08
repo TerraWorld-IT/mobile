@@ -51,11 +51,11 @@
 7. AdMob 보상형 광고 단위의 SSV 콜백 URL을 운영 백엔드의 기존 보상형 콜백 주소로 설정하고 검증한다. **실제 운영 URL은 백엔드 담당자가 확인한 값**을 사용한다. 백엔드 **`REWARD_AD_SSV_AD_UNIT_ALLOWLIST`**에 새 iOS 광고 단위 ID를 추가한다. 현재 `reward.ad.mode` 기본값은 `legacy`이며 이번 작업은 이를 변경하지 않는다. SSV-authoritative 운영 전환 시 nonce 검증·중복 지급 방지·콜백 도달을 별도로 확인한다.
 8. App Store에 등록한 개발자 웹사이트 도메인의 `/app-ads.txt`에 AdMob 콘솔이 제공하는 판매자 항목을 게시하고 크롤링/앱 인증 상태를 확인한다. 제공 지역에 필요한 광고 동의 설정도 점검한다.
 9. App Store Connect 개인정보 라벨에 추적·광고 식별자·광고 상호작용·대략적 위치·진단 데이터의 수집 목적/연결/추적 여부를 반영한다. Xcode에서 SDK를 포함한 Privacy Report와 대조하고 개인정보처리방침도 실제 동작과 맞춘다.
-10. frontend와 mobile 두 작업 단위의 독립 수용 검토 후 PR의 **mobile-ci → iOS Build Check**를 확인한다. 현재 워크플로는 feature 브랜치 push만으로 실행되지 않으므로 main/develop 대상 PR을 사용한다. 사람 자원과 아래 실기기 검증이 준비된 다음 별도 승인된 단계에서만 태그·TestFlight·App Review 재제출을 진행한다.
+10. frontend와 mobile 두 작업 단위의 독립 수용 검토 후 PR을 main에 머지하고, main push로 실행되는 **mobile-ci → iOS Build Check** 결과를 확인한다. 이 job은 PR이나 develop push에서는 실행되지 않는다. iOS 시뮬레이터 빌드가 실패하면 수정 PR로 보완한다. 사람 자원과 아래 실기기 검증이 준비된 다음 별도 승인된 단계에서만 태그·TestFlight·App Review 재제출을 진행한다.
 
 ## macOS CI 및 실기기 확인
 
-`mobile-ci.yml`의 `ios/**` 필터는 Extension과 shared 소스를 포함한다. iOS 워크플로 자체 변경도 빌드 대상이다. production cap sync 후 App scheme을 무서명 시뮬레이터로 빌드하고 `App.app/PlugIns/TerraWidgetExtension.appex/TerraWidgetExtension` 존재를 검사한다.
+`mobile-ci.yml`의 iOS Build Check는 main push에서만 실행된다. `ios/**` 필터는 Extension과 shared 소스를 포함하며 iOS 워크플로 자체 변경도 빌드 대상이다. 문서만 변경한 push는 워크플로 실행 대상에서 제외되며, iOS 관련 경로가 변경되지 않으면 빌드 단계는 건너뛴다. PR 머지 후 해당 main push에서 빌드 단계가 실제로 실행되어 성공했는지 확인하고, 실패하면 수정 PR로 보완한다. production cap sync 후 App scheme을 무서명 시뮬레이터로 빌드하고 `App.app/PlugIns/TerraWidgetExtension.appex/TerraWidgetExtension` 존재를 검사한다.
 
 ```sh
 NODE_ENV=production npx cap sync ios
