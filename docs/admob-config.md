@@ -20,7 +20,9 @@
 
 frontend는 `AdMob.requestTrackingAuthorization()`을 초기화 전에 호출하고, 미결정 상태에서만 최초 시스템 프롬프트를 요청한다. 허용 시 개인화 요청, 거부·제한 시 재요청 없이 비개인화 광고를 요청하는 동작은 frontend 작업 및 실기기 검증 대상이다. ATT는 지역별 광고 동의 절차를 대체하지 않으므로 제공 지역에 필요한 UMP/동의 설정도 배포 전에 확인한다.
 
-`PrivacyInfo.xcprivacy`는 기존 이메일·회원 ID·기타 데이터·사용자 콘텐츠·피트니스 5종 및 FileTimestamp 사유 `C617.1`을 보존하고 `NSPrivacyTracking=true`로 변경한다. DeviceID·ProductInteraction을 광고 목적에 맞게 복원하고 AdvertisingData·CrashData·PerformanceData·OtherDiagnosticData를 추가했다. 광고 SDK의 분석 목적은 선언하지만 별도 제품 분석 SDK를 도입한 것은 아니다. CrashData는 사용자 연결·추적 false, 다른 광고 항목은 연결·추적 true로 선언한다. 최종 제출 전 Xcode의 SDK 포함 Privacy Report와 ASC 라벨을 함께 확인한다.
+앱의 `PrivacyInfo.xcprivacy`는 앱 코드가 추적 도메인에 직접 연결하지 않으므로 `NSPrivacyTracking=false`, `NSPrivacyTrackingDomains`는 빈 배열로 둔다. Google Mobile Ads SDK의 추적·도메인 선언은 SDK 자체 개인정보 매니페스트가 담당한다. 이 앱 수준 설정이 ATT·개인화 광고를 비활성화하거나 SDK의 추적이 없다는 뜻은 아니다.
+
+수집 데이터 유형 선언은 그대로 유지한다. 기존 이메일·회원 ID·기타 데이터·사용자 콘텐츠·피트니스 5종 및 FileTimestamp 사유 `C617.1`을 보존하고, DeviceID·ProductInteraction을 광고 목적에 맞게 복원하고 AdvertisingData·CrashData·PerformanceData·OtherDiagnosticData를 추가했다. 광고 SDK의 분석 목적은 선언하지만 별도 제품 분석 SDK를 도입한 것은 아니다. CrashData는 사용자 연결·추적 false, 다른 광고 항목은 연결·추적 true로 선언한다. 최종 제출 전 Xcode의 SDK 포함 Privacy Report와 ASC 라벨을 함께 확인한다.
 
 제거 이력 `821b688`의 Name·PhotosorVideos·PurchaseHistory·Contacts는 이번 도입에서 해당 수집 경로를 추가하지 않으므로 복원하지 않았다. 옛 DeviceID·ProductInteraction의 분석 전용/추적 false 선언도 그대로 재사용하지 않는다. 앱은 광고 SDK에 위치를 전달하지 않으므로 앱 매니페스트의 CoarseLocation 선언은 제거했다. SDK가 IP로 추정하는 대략적 위치는 SDK 자체 매니페스트와 함께 확인하고, App Store Connect 개인정보 라벨에는 SDK 수집분을 포함한다. `NSPrivacyTrackingDomains`는 기존 빈 배열을 유지하며 앱 수준에서 광고 도메인을 추측해 추가하지 않는다. SDK 자체 매니페스트의 추적 도메인 차단 및 ATT 거부 후 광고 동작은 실기기에서 확인한다.
 
