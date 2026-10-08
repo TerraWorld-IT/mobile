@@ -44,8 +44,8 @@ const MOBILE_ROOT = resolve(__dirname, '..')
 // capacitor.config.ts 의 주석·네이티브 설정 복원 목록과 함께 갱신한다.
 const EXPECTED_EXCLUDED = {
   android: ['@capacitor-community/admob', '@capacitor/camera', 'cordova-plugin-purchase'],
-  // iOS 는 release.yml 'iOS IAP gate' 때문에 cordova-plugin-purchase 를 유지한다.
-  ios: ['@capacitor-community/admob', '@capacitor/camera'],
+  // iOS는 보상형 광고를 포함하며 release.yml 'iOS IAP gate' 때문에 cordova-plugin-purchase 를 유지한다.
+  ios: ['@capacitor/camera'],
 }
 // dependencies 중 cap sync 플러그인이 아닌 런타임 패키지.
 const NON_PLUGIN_DEPS = new Set(['@capacitor/core'])

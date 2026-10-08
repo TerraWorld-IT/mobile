@@ -14,5 +14,9 @@
 	<!-- 푸시 알림 권한 — APNs 발송용 (FCM 도 APNs 의존). -->
 	<key>aps-environment</key>
 	<string>production</string>
+	<key>com.apple.security.application-groups</key>
+	<array>
+		<string>group.app.terraworld.mobile</string>
+	</array>
 </dict>
 </plist>

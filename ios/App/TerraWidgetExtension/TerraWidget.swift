@@ -66,6 +66,6 @@ struct TerraWidget: Widget {
         }
         .configurationDisplayName("나의 테라")
         .description("앱에서 마지막으로 본 테라리움을 보여줘요")
-        .supportedFamilies([.systemSmall, .systemMedium, .systemLarge])
+        .supportedFamilies([.systemSmall, .systemMedium])
     }
 }

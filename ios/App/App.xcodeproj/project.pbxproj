@@ -18,7 +18,42 @@
 		504EC30F1FED79650016851F /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 504EC30E1FED79650016851F /* Assets.xcassets */; };
 		504EC3121FED79650016851F /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 504EC3101FED79650016851F /* LaunchScreen.storyboard */; };
 		50B271D11FEDC1A000F3C39B /* public in Resources */ = {isa = PBXBuildFile; fileRef = 50B271D01FEDC1A000F3C39B /* public */; };
+		A10820261008000000000007 /* TerraWidgetPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10820261008000000000001; };
+		A10820261008000000000008 /* TerraWidgetSnapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10820261008000000000002; };
+		A10820261008000000000009 /* TerraWidgetSnapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10820261008000000000002; };
+		A1082026100800000000000A /* TerraWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10820261008000000000003; };
+		A1082026100800000000000B /* TerraWidgetExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = A10820261008000000000006; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 /* End PBXBuildFile section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		A10820261008000000000011 /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (A1082026100800000000000B, );
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
+/* Begin PBXContainerItemProxy section */
+		A10820261008000000000012 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 504EC2FC1FED79650016851F;
+			proxyType = 1;
+			remoteGlobalIDString = A10820261008000000000014;
+			remoteInfo = TerraWidgetExtension;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXTargetDependency section */
+		A10820261008000000000013 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = A10820261008000000000014;
+			targetProxy = A10820261008000000000012;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin PBXFileReference section */
 		D7A10910A3264B47B3BC0102 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
@@ -35,6 +70,12 @@
 		50B271D01FEDC1A000F3C39B /* public */ = {isa = PBXFileReference; lastKnownFileType = folder; path = public; sourceTree = "<group>"; };
 		958DCC722DB07C7200EA8C5F /* debug.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; name = debug.xcconfig; path = ../debug.xcconfig; sourceTree = SOURCE_ROOT; };
 		958DCC732DB07C7200EA8C5F /* release.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; name = release.xcconfig; path = ../release.xcconfig; sourceTree = SOURCE_ROOT; };
+		A10820261008000000000001 /* TerraWidgetPlugin.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TerraWidgetPlugin.swift; sourceTree = "<group>"; };
+		A10820261008000000000002 /* TerraWidgetSnapshot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TerraWidgetSnapshot.swift; sourceTree = "<group>"; };
+		A10820261008000000000003 /* TerraWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TerraWidget.swift; sourceTree = "<group>"; };
+		A10820261008000000000004 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		A10820261008000000000005 /* TerraWidgetExtension.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = TerraWidgetExtension.entitlements; sourceTree = "<group>"; };
+		A10820261008000000000006 /* TerraWidgetExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = TerraWidgetExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -46,6 +87,12 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		A1082026100800000000000F /* PBXFrameworksBuildPhase */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = ();
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -54,6 +101,8 @@
 			children = (
 				958DCC722DB07C7200EA8C5F /* debug.xcconfig */,
 				958DCC732DB07C7200EA8C5F /* release.xcconfig */,
+				A1082026100800000000000C /* WidgetShared */,
+				A1082026100800000000000D /* TerraWidgetExtension */,
 				504EC3061FED79650016851F /* App */,
 				504EC3051FED79650016851F /* Products */,
 			);
@@ -62,6 +111,7 @@
 		504EC3051FED79650016851F /* Products */ = {
 			isa = PBXGroup;
 			children = (
+				A10820261008000000000006 /* TerraWidgetExtension.appex */,
 				504EC3041FED79650016851F /* App.app */,
 			);
 			name = Products;
@@ -73,6 +123,7 @@
 				50379B222058CBB4000EE86E /* capacitor.config.json */,
 				504EC3071FED79650016851F /* AppDelegate.swift */,
 				1CD0F07B283D9BCD527D6258 /* ViewController.swift */,
+				A10820261008000000000001 /* TerraWidgetPlugin.swift */,
 				A71C20260721000000000002 /* InstagramStoriesPlugin.swift */,
 				504EC30B1FED79650016851F /* Main.storyboard */,
 				504EC30E1FED79650016851F /* Assets.xcassets */,
@@ -85,6 +136,18 @@
 			path = App;
 			sourceTree = "<group>";
 		};
+		A1082026100800000000000C /* WidgetShared */ = {
+			isa = PBXGroup;
+			children = (A10820261008000000000002, );
+			path = WidgetShared;
+			sourceTree = "<group>";
+		};
+		A1082026100800000000000D /* TerraWidgetExtension */ = {
+			isa = PBXGroup;
+			children = (A10820261008000000000003,A10820261008000000000004,A10820261008000000000005, );
+			path = TerraWidgetExtension;
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -95,10 +158,12 @@
 				504EC3001FED79650016851F /* Sources */,
 				504EC3011FED79650016851F /* Frameworks */,
 				504EC3021FED79650016851F /* Resources */,
+				A10820261008000000000011 /* Embed Foundation Extensions */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				A10820261008000000000013 /* PBXTargetDependency */,
 			);
 			name = App;
 			packageProductDependencies = (
@@ -107,6 +172,17 @@
 			productName = App;
 			productReference = 504EC3041FED79650016851F /* App.app */;
 			productType = "com.apple.product-type.application";
+		};
+		A10820261008000000000014 /* TerraWidgetExtension */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = A10820261008000000000017;
+			buildPhases = (A1082026100800000000000E, A1082026100800000000000F, A10820261008000000000010, );
+			buildRules = ();
+			dependencies = ();
+			name = TerraWidgetExtension;
+			productName = TerraWidgetExtension;
+			productReference = A10820261008000000000006;
+			productType = "com.apple.product-type.app-extension";
 		};
 /* End PBXNativeTarget section */
 
@@ -140,6 +216,7 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
+				A10820261008000000000014 /* TerraWidgetExtension */,
 				504EC3031FED79650016851F /* App */,
 			);
 		};
@@ -160,6 +237,12 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		A10820261008000000000010 /* PBXResourcesBuildPhase */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = ();
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
@@ -169,8 +252,16 @@
 			files = (
 				504EC3081FED79650016851F /* AppDelegate.swift in Sources */,
 				656AF6691D407A52F9D7E047 /* ViewController.swift in Sources */,
+				A10820261008000000000007 /* TerraWidgetPlugin.swift in Sources */,
+				A10820261008000000000008 /* TerraWidgetSnapshot.swift in Sources */,
 				A71C20260721000000000001 /* InstagramStoriesPlugin.swift in Sources */,
 			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		A1082026100800000000000E /* PBXSourcesBuildPhase */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (A10820261008000000000009,A1082026100800000000000A,);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXSourcesBuildPhase section */
@@ -355,6 +446,52 @@
 			};
 			name = Release;
 		};
+		A10820261008000000000015 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CLANG_ENABLE_MODULES = YES;
+				CODE_SIGN_ENTITLEMENTS = TerraWidgetExtension/TerraWidgetExtension.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = SMF6T723XR;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = TerraWidgetExtension/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.4;
+				LD_RUNPATH_SEARCH_PATHS = ("$(inherited)", "@executable_path/Frameworks", "@executable_path/../../Frameworks", );
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = app.terraworld.mobile.TerraWidgetExtension;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Debug;
+		};
+		A10820261008000000000016 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CLANG_ENABLE_MODULES = YES;
+				CODE_SIGN_ENTITLEMENTS = TerraWidgetExtension/TerraWidgetExtension.entitlements;
+				CODE_SIGN_STYLE = Manual;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = SMF6T723XR;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = TerraWidgetExtension/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.4;
+				LD_RUNPATH_SEARCH_PATHS = ("$(inherited)", "@executable_path/Frameworks", "@executable_path/../../Frameworks", );
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = app.terraworld.mobile.TerraWidgetExtension;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+				CODE_SIGN_IDENTITY = "Apple Distribution";
+				PROVISIONING_PROFILE_SPECIFIER = "TerraWorld Widget App Store";
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -373,6 +510,12 @@
 				504EC3171FED79650016851F /* Debug */,
 				504EC3181FED79650016851F /* Release */,
 			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		A10820261008000000000017 /* TerraWidgetExtension 구성 */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (A10820261008000000000015, A10820261008000000000016, );
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};

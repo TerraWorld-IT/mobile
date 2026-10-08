@@ -14,7 +14,7 @@ import { fileURLToPath } from 'node:url'
 
 const MOBILE_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const SCRIPT = join(MOBILE_ROOT, 'scripts', 'check-capacitor-sync.mjs')
-const CONFIG_SRC = readFileSync(join(MOBILE_ROOT, 'capacitor.config.ts'), 'utf8')
+const CONFIG_SRC = readFileSync(join(MOBILE_ROOT, 'capacitor.config.ts'), 'utf8').replace(/\r\n/g, '\n')
 const PACKAGE = JSON.parse(readFileSync(join(MOBILE_ROOT, 'package.json'), 'utf8'))
 
 function run(configSrc, pkg) {
@@ -94,4 +94,9 @@ test('새 의존성을 allowlist 에 빠뜨리면 두 플랫폼 모두 실패한
 test('제외 대상 의존성이 사라지면 실패한다(제외 목록 갱신 강제)', () => {
   const { '@capacitor/camera': _camera, ...dependencies } = PACKAGE.dependencies
   assertDrift(run(CONFIG_SRC, { ...PACKAGE, dependencies }), /@capacitor\/camera 은 제외 대상인데 포함됐다 \(또는 dependencies 에서 사라졌다\)/)
+})
+
+test('iOS 보상형 광고 SDK를 빼면 실패한다', () => {
+  const config = mutatePlatform('ios', `      '@capacitor-community/admob',\n`, '')
+  assertDrift(run(config, PACKAGE), /ios: @capacitor-community\/admob 이 includePlugins 에서 빠졌다/)
 })

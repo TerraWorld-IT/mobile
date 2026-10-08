@@ -3,7 +3,7 @@ import Foundation
 import ImageIO
 import WidgetKit
 
-// App 타깃 전용. Xcode 배선 후 ViewController.capacitorDidLoad 에서 등록(runbook 참조).
+// App 타깃 전용. ViewController.capacitorDidLoad에서 등록한다.
 @objc(TerraWidgetPlugin)
 public class TerraWidgetPlugin: CAPPlugin, CAPBridgedPlugin {
     public let identifier = "TerraWidgetPlugin"
@@ -21,8 +21,8 @@ public class TerraWidgetPlugin: CAPPlugin, CAPBridgedPlugin {
               data.starts(with: [137, 80, 78, 71, 13, 10, 26, 10]),
               let source = CGImageSourceCreateWithData(data as CFData, nil),
               let properties = CGImageSourceCopyPropertiesAtIndex(source, 0, nil) as? [CFString: Any],
-              (properties[kCGImagePropertyPixelWidth] as? Int) == 320,
-              (properties[kCGImagePropertyPixelHeight] as? Int) == 442 else {
+              (properties[kCGImagePropertyPixelWidth] as? NSNumber)?.intValue == 320,
+              (properties[kCGImagePropertyPixelHeight] as? NSNumber)?.intValue == 442 else {
             call.reject("Widget PNG must be 320x442")
             return
         }
