@@ -21,8 +21,8 @@ public class TerraWidgetPlugin: CAPPlugin, CAPBridgedPlugin {
               data.starts(with: [137, 80, 78, 71, 13, 10, 26, 10]),
               let source = CGImageSourceCreateWithData(data as CFData, nil),
               let properties = CGImageSourceCopyPropertiesAtIndex(source, 0, nil) as? [CFString: Any],
-              (properties[kCGImagePropertyPixelWidth] as? Int) == 320,
-              (properties[kCGImagePropertyPixelHeight] as? Int) == 442 else {
+              (properties[kCGImagePropertyPixelWidth] as? NSNumber)?.intValue == 320,
+              (properties[kCGImagePropertyPixelHeight] as? NSNumber)?.intValue == 442 else {
             call.reject("Widget PNG must be 320x442")
             return
         }

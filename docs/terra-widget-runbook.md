@@ -50,7 +50,7 @@
 6. AdMob에서 iOS 앱을 등록하고 App ID를 GitHub secret **`ADMOB_IOS_APP_ID`**에 설정한다. `ca-app-pub-<16자리>~<10자리>` 형식이며 Google 테스트 퍼블리셔는 서명 릴리스에서 거부된다. iOS 보상형 광고 단위를 발급하고 별도 frontend 작업 `ios-widget-ads-frontend`의 iOS 광고 단위 설정에 전달한다. Android 광고 단위나 App ID를 대신 쓰지 않는다.
 7. AdMob 보상형 광고 단위의 SSV 콜백 URL을 운영 백엔드의 기존 보상형 콜백 주소로 설정하고 검증한다. **실제 운영 URL은 백엔드 담당자가 확인한 값**을 사용한다. 백엔드 **`REWARD_AD_SSV_AD_UNIT_ALLOWLIST`**에 새 iOS 광고 단위 ID를 추가한다. 현재 `reward.ad.mode` 기본값은 `legacy`이며 이번 작업은 이를 변경하지 않는다. SSV-authoritative 운영 전환 시 nonce 검증·중복 지급 방지·콜백 도달을 별도로 확인한다.
 8. App Store에 등록한 개발자 웹사이트 도메인의 `/app-ads.txt`에 AdMob 콘솔이 제공하는 판매자 항목을 게시하고 크롤링/앱 인증 상태를 확인한다. 제공 지역에 필요한 광고 동의 설정도 점검한다.
-9. App Store Connect 개인정보 라벨에 추적·광고 식별자·광고 상호작용·대략적 위치·진단 데이터의 수집 목적/연결/추적 여부를 반영한다. Xcode에서 SDK를 포함한 Privacy Report와 대조하고 개인정보처리방침도 실제 동작과 맞춘다.
+9. App Store Connect 개인정보 라벨에 추적·광고 식별자·광고 상호작용·대략적 위치·진단 데이터의 수집 목적/연결/추적 여부를 **SDK 수집분 포함**하여 반영한다. Xcode에서 SDK를 포함한 Privacy Report와 대조하고 개인정보처리방침도 실제 동작과 맞춘다.
 10. frontend와 mobile 두 작업 단위의 독립 수용 검토 후 PR을 main에 머지하고, main push로 실행되는 **mobile-ci → iOS Build Check** 결과를 확인한다. 이 job은 PR이나 develop push에서는 실행되지 않는다. iOS 시뮬레이터 빌드가 실패하면 수정 PR로 보완한다. 사람 자원과 아래 실기기 검증이 준비된 다음 별도 승인된 단계에서만 태그·TestFlight·App Review 재제출을 진행한다.
 
 ## macOS CI 및 실기기 확인

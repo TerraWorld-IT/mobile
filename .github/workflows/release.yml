@@ -11,8 +11,8 @@ name: Mobile Release Build
 #   ADMOB_APP_ID_ANDROID      — (선택) 실제 AdMob Android App ID (ca-app-pub-…~…).
 #                               미설정 시 Google 테스트 App ID 폴백으로 빌드되고 warning 만 출력
 #                               (릴리스는 막지 않음 — 단 광고 수익 0).
-#   ADMOB_APP_ID_IOS          — (선택) 실제 AdMob iOS App ID. ios-release job 이
-#                               ios/release.xcconfig 에 append 주입. 미설정 시 동일하게 테스트 ID 폴백.
+#   ADMOB_IOS_APP_ID          — (필수) 실제 AdMob iOS App ID. ios-release job 이
+#                               archive 전 App Info.plist에 주입. 누락·형식 오류·테스트 ID는 실패.
 #
 # Secrets 가 없으면 unsigned AAB 만 생성됨 (Play Store 업로드 불가).
 # android/app/build.gradle 의 release buildType 에 signingConfig 도 설정되어 있어야 한다.
@@ -280,10 +280,10 @@ jobs:
   #   APPLE_API_ISSUER_ID      — Issuer ID (UUID)
   #   APPLE_API_KEY_P8_BASE64  — `base64 -w0 AuthKey_*.p8` 결과
   #   APPLE_TEAM_ID            — Apple Developer Team ID (Universal Links 와 동일)
-  #   ADMOB_APP_ID_IOS         — (선택) 실제 AdMob iOS App ID. release.xcconfig 에 append
-  #                              주입. 미설정 시 테스트 App ID 폴백 + warning (릴리스 비차단).
+  #   ADMOB_IOS_APP_ID         — (필수) 실제 AdMob iOS App ID. archive 전 App Info.plist에
+  #                              주입. 누락·형식 오류·테스트 ID는 서명 릴리스 실패.
   #
-  # Secrets 가 없으면 build only 모드 (TestFlight upload skip).
+  # 서명 시크릿이 없으면 실패. App·Widget 프로비저닝 프로파일이 모두 필요하다.
   # 본 job 은 runs-on: macos-latest 필수.
   ios-release:
     name: iOS Release (xcodebuild archive + TestFlight)
