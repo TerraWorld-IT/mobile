@@ -1,6 +1,6 @@
 import Foundation
 
-// 이 파일을 Xcode 에서 App 과 TerraWidgetExtension 두 타깃 멤버십에 모두 추가한다.
+// App과 TerraWidgetExtension 양쪽 타깃이 같은 App Group 파일을 사용한다.
 enum TerraWidgetSnapshot {
     static let groupID = "group.app.terraworld.mobile"
     static let kind = "TerraWidget"

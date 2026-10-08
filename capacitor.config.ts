@@ -54,18 +54,12 @@ const config: CapacitorConfig = {
   // iOS-specific overrides
   ios: {
     scheme: 'TerraWorld',
-    // iOS 첫 출시는 광고 제외 확정 — AdMob 네이티브 플러그인을 iOS 빌드에서 뺀다.
-    // 광고 SDK 가 없으면 ATT(추적 권한) 요청도 없으므로 NSUserTrackingUsageDescription 을
-    // 둘 필요가 없다(설명 문구만 있고 요청이 없으면 가이드라인 5.1.2 반려 소지).
-    // 전역 includePlugins 를 덮어쓰는 allowlist 라 package.json 의존성이 늘어도 iOS 에는 자동
-    // 포함되지 않는다 — 새 플러그인은 여기에도 추가해야 한다 (Android 는 allowlist 없이 전체 포함).
-    // cordova-plugin-purchase 는 release.yml 의 'iOS IAP gate' 가 cap sync 결과를 검사하므로 유지.
-    // iOS 에 광고를 도입하는 시점에 '@capacitor-community/admob' 복원 + Info.plist 의
-    // GADApplicationIdentifier·ATT 문구·SKAdNetworkItems 를 함께 되살린다.
-    // '@capacitor/camera' 도 뺐다 — frontend 가 카메라·사진 선택을 호출하지 않아 쓰지 않는 권한
-    // 문구(NSCameraUsageDescription 등)가 심사 사유가 될 수 있다. 사진 첨부 도입 시 복원 +
-    // Info.plist 권한 문구·PrivacyInfo.xcprivacy 의 PhotosorVideos 를 함께 되살린다 (Android 는 그대로).
+    // iOS 보상형 광고와 ATT 요청을 지원한다. 광고 요청·동의 상태 처리는 frontend가 담당한다.
+    // allowlist에 AdMob을 포함하고 Info.plist·개인정보 매니페스트를 함께 유지한다.
+    // 카메라·사진 읽기는 미도입이므로 @capacitor/camera는 계속 제외한다.
+    // cordova-plugin-purchase는 기존 release.yml의 iOS IAP gate를 위해 유지한다.
     includePlugins: [
+      '@capacitor-community/admob',
       '@capacitor/app',
       '@capacitor/filesystem',
       '@capacitor/haptics',

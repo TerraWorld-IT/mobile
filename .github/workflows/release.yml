@@ -359,24 +359,18 @@ jobs:
           fi
           echo "cordova-plugin-purchase 재생성 확인 OK"
 
-      # 실제 AdMob App ID 주입 (iOS). ios/release.xcconfig 는 App 타겟 Release 설정의
-      # baseConfigurationReference 로 배선돼 있고, xcconfig 는 후행 정의가 우선이므로
-      # append 로 파일 상단의 테스트 App ID 를 덮어쓴다 (release.xcconfig 주석이 기술하는
-      # 방식 그대로). secret 미설정 시 테스트 ID 폴백 유지 — 릴리스는 막지 않고 warning.
-      - name: Inject production AdMob App ID (release.xcconfig append)
+      # 앱 plist만 변경한다. 테스트 ID 또는 누락된 운영 ID로 서명 릴리스를 만들지 않는다.
+      - name: Inject production AdMob App ID
         env:
-          ADMOB_APP_ID_IOS: ${{ secrets.ADMOB_APP_ID_IOS }}
+          ADMOB_IOS_APP_ID: ${{ secrets.ADMOB_IOS_APP_ID }}
         run: |
           set -euo pipefail
-          if [ -n "$ADMOB_APP_ID_IOS" ]; then
-            {
-              printf '\n// release.yml 주입 — production AdMob App ID (secret: ADMOB_APP_ID_IOS). 후행 정의가 우선.\n'
-              printf 'ADMOB_APP_ID = %s\n' "$ADMOB_APP_ID_IOS"
-            } >> ios/release.xcconfig
-            echo "::notice::production AdMob App ID 주입됨 (ios/release.xcconfig append)"
-          else
-            echo "::warning::ADMOB_APP_ID_IOS secret 미설정 — Google 테스트 AdMob App ID 로 릴리스 빌드됨 (광고 수익 0)"
+          if ! [[ "$ADMOB_IOS_APP_ID" =~ ^ca-app-pub-[0-9]{16}~[0-9]{10}$ ]] \
+             || [[ "$ADMOB_IOS_APP_ID" == *3940256099942544* ]]; then
+            echo "::error::ADMOB_IOS_APP_ID 누락·형식 오류 또는 Google 테스트 ID — 서명 릴리스 불가"
+            exit 1
           fi
+          /usr/libexec/PlistBuddy -c "Set :GADApplicationIdentifier $ADMOB_IOS_APP_ID" ios/App/App/Info.plist
 
       - name: Extract version from tag
         id: ver
@@ -401,33 +395,41 @@ jobs:
 
       - name: Verify secrets
         id: secrets_check
+        env:
+          APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
+          APPLE_API_ISSUER_ID: ${{ secrets.APPLE_API_ISSUER_ID }}
+          APPLE_API_KEY_P8_BASE64: ${{ secrets.APPLE_API_KEY_P8_BASE64 }}
+          CERT_P12_BASE64: ${{ secrets.APPLE_DISTRIBUTION_CERT_P12_BASE64 }}
+          CERT_PASSWORD: ${{ secrets.APPLE_DISTRIBUTION_CERT_PASSWORD }}
+          PROFILE_BASE64: ${{ secrets.APPLE_PROVISIONING_PROFILE_BASE64 }}
+          WIDGET_PROFILE_BASE64: ${{ secrets.APPLE_WIDGET_PROVISIONING_PROFILE_BASE64 }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
         run: |
-          # ASC API key — TestFlight 업로드(altool) 인증에 필요.
-          if [ -n "${{ secrets.APPLE_API_KEY_ID }}" ] && [ -n "${{ secrets.APPLE_API_ISSUER_ID }}" ] && [ -n "${{ secrets.APPLE_API_KEY_P8_BASE64 }}" ]; then
+          set -euo pipefail
+          # 업로드 인증과 App·Extension 서명 준비를 별도로 검사한다.
+          if [ -n "$APPLE_API_KEY_ID" ] && [ -n "$APPLE_API_ISSUER_ID" ] && [ -n "$APPLE_API_KEY_P8_BASE64" ]; then
             echo "has_apple_key=true" >> "$GITHUB_OUTPUT"
           else
             echo "has_apple_key=false" >> "$GITHUB_OUTPUT"
             echo "::warning::APPLE_API_* secrets 부재 — build only 모드, TestFlight upload skip"
           fi
-          # 고정 Distribution 인증서 + App Store provisioning profile — 서명에 필요.
-          # 과거엔 -allowProvisioningUpdates 로 매 실행 인증서를 새로 발급 → ephemeral 러너라
-          # 재사용 불가 → 계정 인증서 상한 소진(v0.1.7 실패). 이제 고정 인증서를 임포트해 재사용한다.
-          if [ -n "${{ secrets.APPLE_DISTRIBUTION_CERT_P12_BASE64 }}" ] \
-             && [ -n "${{ secrets.APPLE_DISTRIBUTION_CERT_PASSWORD }}" ] \
-             && [ -n "${{ secrets.APPLE_PROVISIONING_PROFILE_BASE64 }}" ] \
-             && [ -n "${{ secrets.APPLE_TEAM_ID }}" ]; then
+          if [ -n "$CERT_P12_BASE64" ] && [ -n "$CERT_PASSWORD" ] \
+             && [ -n "$PROFILE_BASE64" ] && [ -n "$WIDGET_PROFILE_BASE64" ] \
+             && [ -n "$APPLE_TEAM_ID" ]; then
+            if [ "$APPLE_TEAM_ID" != 'SMF6T723XR' ]; then
+              echo "::error::APPLE_TEAM_ID가 프로젝트의 App·Extension 팀과 일치하지 않음"
+              exit 1
+            fi
             echo "has_signing=true" >> "$GITHUB_OUTPUT"
           else
             echo "has_signing=false" >> "$GITHUB_OUTPUT"
-            echo "::warning::서명 시크릿 부재 — APPLE_DISTRIBUTION_CERT_P12_BASE64 / _PASSWORD / APPLE_PROVISIONING_PROFILE_BASE64 / APPLE_TEAM_ID 4개 모두 필요(build-only). 고정 인증서 셋업 필요."
+            echo "::warning::서명 시크릿 부재 — App·Widget 프로파일을 모두 설정해야 함"
           fi
 
-      # tag 릴리스인데 서명 시크릿이 없으면 조용히 green 으로 끝내지 않고 명확히 실패시킨다
-      # (silent no-op = "green 인데 TestFlight 에 아무것도 안 올라감" 오도 방지).
       - name: Require signing secrets (fail if not set up)
         if: steps.secrets_check.outputs.has_signing != 'true'
         run: |
-          echo "::error::iOS 서명 시크릿 미설정 — TestFlight 릴리스 불가. 고정 Distribution 인증서 + App Store profile 셋업 필요(APPLE_DISTRIBUTION_CERT_P12_BASE64 / _PASSWORD / APPLE_PROVISIONING_PROFILE_BASE64 / APPLE_TEAM_ID)."
+          echo "::error::iOS 서명 시크릿 미설정 — APPLE_DISTRIBUTION_CERT_P12_BASE64 / APPLE_DISTRIBUTION_CERT_PASSWORD / APPLE_PROVISIONING_PROFILE_BASE64 / APPLE_WIDGET_PROVISIONING_PROFILE_BASE64 / APPLE_TEAM_ID 필요"
           exit 1
 
       - name: Decode Apple API key
@@ -445,6 +447,7 @@ jobs:
           CERT_P12_BASE64: ${{ secrets.APPLE_DISTRIBUTION_CERT_P12_BASE64 }}
           CERT_PASSWORD: ${{ secrets.APPLE_DISTRIBUTION_CERT_PASSWORD }}
           PROFILE_BASE64: ${{ secrets.APPLE_PROVISIONING_PROFILE_BASE64 }}
+          WIDGET_PROFILE_BASE64: ${{ secrets.APPLE_WIDGET_PROVISIONING_PROFILE_BASE64 }}
         run: |
           set -euo pipefail
           # ── 임시 keychain 에 고정 Distribution 인증서 임포트 (재사용 — 매 실행 새 발급 금지) ──
@@ -463,19 +466,50 @@ jobs:
           security list-keychains -d user -s "$KEYCHAIN" login.keychain-db
           # 인증서/개인키가 실제로 임포트됐는지 조기 검증 (잘못된 p12/비번을 archive 전에 잡는다)
           security find-identity -v -p codesigning "$KEYCHAIN"
-          # ── App Store provisioning profile 설치 ──
+          # App과 Extension은 서로 다른 App Store 프로파일을 사용한다.
           printf '%s' "$PROFILE_BASE64" | base64 -d > "$RUNNER_TEMP/app.mobileprovision"
-          PROFILE_UUID="$(security cms -D -i "$RUNNER_TEMP/app.mobileprovision" | plutil -extract UUID raw -)"
-          PROFILE_NAME="$(security cms -D -i "$RUNNER_TEMP/app.mobileprovision" | plutil -extract Name raw -)"
-          # Xcode 16+ 는 신규 위치를, 구버전은 기존 위치를 읽는다 — 양쪽에 설치(UUID 파일명 = Xcode 규약).
-          for PROFILE_DIR in "$HOME/Library/MobileDevice/Provisioning Profiles" \
-                             "$HOME/Library/Developer/Xcode/UserData/Provisioning Profiles"; do
-            mkdir -p "$PROFILE_DIR"
-            cp "$RUNNER_TEMP/app.mobileprovision" "$PROFILE_DIR/$PROFILE_UUID.mobileprovision"
+          printf '%s' "$WIDGET_PROFILE_BASE64" | base64 -d > "$RUNNER_TEMP/widget.mobileprovision"
+          for TARGET in app widget; do
+            PROFILE="$RUNNER_TEMP/$TARGET.mobileprovision"
+            security cms -D -i "$PROFILE" > "$RUNNER_TEMP/$TARGET-profile.plist"
+            PROFILE_UUID="$(/usr/libexec/PlistBuddy -c 'Print :UUID' "$RUNNER_TEMP/$TARGET-profile.plist")"
+            PROFILE_NAME="$(/usr/libexec/PlistBuddy -c 'Print :Name' "$RUNNER_TEMP/$TARGET-profile.plist")"
+            if [ "$TARGET" = app ]; then
+              EXPECTED_NAME='TerraWorld App Store'
+              EXPECTED_APP_ID='SMF6T723XR.app.terraworld.mobile'
+              PROFILE_ENV='PROVISION_PROFILE_NAME'
+            else
+              EXPECTED_NAME='TerraWorld Widget App Store'
+              EXPECTED_APP_ID='SMF6T723XR.app.terraworld.mobile.TerraWidgetExtension'
+              PROFILE_ENV='WIDGET_PROVISION_PROFILE_NAME'
+            fi
+            # 잘못된 프로파일·App Group 누락은 archive 전에 차단한다. 값은 로그에 남기지 않는다.
+            EXPECTED_NAME="$EXPECTED_NAME" EXPECTED_APP_ID="$EXPECTED_APP_ID" \
+              python3 - "$RUNNER_TEMP/$TARGET-profile.plist" <<'PY'
+          import datetime, os, plistlib, sys
+          with open(sys.argv[1], 'rb') as f:
+              p = plistlib.load(f)
+          e = p.get('Entitlements', {})
+          valid = (
+              p.get('Name') == os.environ['EXPECTED_NAME']
+              and e.get('application-identifier') == os.environ['EXPECTED_APP_ID']
+              and p.get('TeamIdentifier') == ['SMF6T723XR']
+              and 'group.app.terraworld.mobile' in e.get('com.apple.security.application-groups', [])
+              and e.get('get-task-allow') is False
+              and not p.get('ProvisionedDevices') and not p.get('ProvisionsAllDevices')
+              and p.get('ExpirationDate', datetime.datetime.min) > datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None)
+          )
+          if not valid:
+              sys.exit('::error::App Store 프로파일 이름·앱 ID·팀·App Group·유효기간을 확인하세요')
+          PY
+            for PROFILE_DIR in "$HOME/Library/MobileDevice/Provisioning Profiles" \
+                               "$HOME/Library/Developer/Xcode/UserData/Provisioning Profiles"; do
+              mkdir -p "$PROFILE_DIR"
+              cp "$PROFILE" "$PROFILE_DIR/$PROFILE_UUID.mobileprovision"
+            done
+            echo "$PROFILE_ENV=$PROFILE_NAME" >> "$GITHUB_ENV"
           done
-          # archive/export 스텝이 참조하도록 profile 이름 전파
-          echo "PROVISION_PROFILE_NAME=$PROFILE_NAME" >> "$GITHUB_ENV"
-          echo "::notice::서명 준비 완료 — profile '$PROFILE_NAME' (UUID $PROFILE_UUID)"
+          echo "::notice::App·Widget 서명 준비 완료"
 
       - name: Archive (xcodebuild)
         if: steps.secrets_check.outputs.has_signing == 'true'
@@ -491,7 +525,7 @@ jobs:
           # 여기 CLI 로 넘기지 않는다 — xcodebuild 의 CLI build setting 은 *모든* 타겟에 적용되어
           # SPM 패키지 타겟(Capacitor 의 IONCameraLib 등)까지 프로파일을 강요하고
           # "does not support provisioning profiles" 로 archive 가 실패한다(v0.1.10 실측).
-          # 대신 App 타겟의 Release 설정(project.pbxproj)에만 넣어 스코프를 한정했다.
+          # 대신 App·Extension 각 타깃의 Release 설정(project.pbxproj)에 개별 프로파일을 지정한다.
           # Capacitor 8 = SPM(비-CocoaPods) → App.xcworkspace 없음. -project App.xcodeproj.
           xcodebuild archive \
             -project App.xcodeproj \
@@ -499,6 +533,26 @@ jobs:
             -configuration Release \
             -archivePath build/App.xcarchive \
             -destination 'generic/platform=iOS'
+
+      - name: Verify archived widget and AdMob App ID
+        if: steps.secrets_check.outputs.has_signing == 'true'
+        env:
+          ADMOB_IOS_APP_ID: ${{ secrets.ADMOB_IOS_APP_ID }}
+        run: |
+          set -euo pipefail
+          APP='ios/App/build/App.xcarchive/Products/Applications/App.app'
+          if [ ! -f "$APP/PlugIns/TerraWidgetExtension.appex/Info.plist" ] \
+             || [ ! -f "$APP/PlugIns/TerraWidgetExtension.appex/TerraWidgetExtension" ]; then
+            echo "::error::archive에 TerraWidgetExtension.appex 누락"
+            exit 1
+          fi
+          ACTUAL_ID="$(/usr/libexec/PlistBuddy -c 'Print :GADApplicationIdentifier' "$APP/Info.plist")"
+          if ! [[ "$ACTUAL_ID" =~ ^ca-app-pub-[0-9]{16}~[0-9]{10}$ ]] \
+             || [[ "$ACTUAL_ID" == *3940256099942544* ]] || [ "$ACTUAL_ID" != "$ADMOB_IOS_APP_ID" ]; then
+            echo "::error::archive의 AdMob App ID가 유효한 운영 설정과 일치하지 않음"
+            exit 1
+          fi
+          echo "::notice::Widget Extension 및 운영 AdMob App ID 확인 완료"
 
       - name: Export IPA
         if: steps.secrets_check.outputs.has_signing == 'true'
@@ -532,6 +586,7 @@ jobs:
           "$PB" -c "Add :teamID string $APPLE_TEAM_ID" ExportOptions.plist
           "$PB" -c "Add :provisioningProfiles dict" ExportOptions.plist
           "$PB" -c "Add :provisioningProfiles:app.terraworld.mobile string $PROVISION_PROFILE_NAME" ExportOptions.plist
+          "$PB" -c "Add :provisioningProfiles:app.terraworld.mobile.TerraWidgetExtension string $WIDGET_PROVISION_PROFILE_NAME" ExportOptions.plist
           xcodebuild -exportArchive \
             -archivePath build/App.xcarchive \
             -exportPath build/ \

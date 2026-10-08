@@ -143,6 +143,9 @@ jobs:
               - 'package.json'
               - 'package-lock.json'
               - 'capacitor.config.ts'
+              - '.github/workflows/mobile-ci.yml'
+              - '.github/workflows/release.yml'
+              - '.github/workflows/ios-lan-test.yml'
 
       - name: Setup Node.js
         if: steps.filter.outputs.ios == 'true'
@@ -178,6 +181,8 @@ jobs:
 
       - name: Capacitor sync
         if: steps.filter.outputs.ios == 'true'
+        env:
+          NODE_ENV: production
         run: npx cap sync ios
 
       # Capacitor 8+ SPM (Podfile 없음). ios/App/CapApp-SPM/Package.swift 가 의존성 정의.
@@ -191,4 +196,6 @@ jobs:
             -sdk iphonesimulator \
             -configuration Debug \
             -destination 'generic/platform=iOS Simulator' \
+            -derivedDataPath build/Simulator \
             CODE_SIGNING_ALLOWED=NO
+          test -f build/Simulator/Build/Products/Debug-iphonesimulator/App.app/PlugIns/TerraWidgetExtension.appex/TerraWidgetExtension

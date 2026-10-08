@@ -3,7 +3,7 @@ import Foundation
 import ImageIO
 import WidgetKit
 
-// App 타깃 전용. Xcode 배선 후 ViewController.capacitorDidLoad 에서 등록(runbook 참조).
+// App 타깃 전용. ViewController.capacitorDidLoad에서 등록한다.
 @objc(TerraWidgetPlugin)
 public class TerraWidgetPlugin: CAPPlugin, CAPBridgedPlugin {
     public let identifier = "TerraWidgetPlugin"
