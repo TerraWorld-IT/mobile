@@ -12,14 +12,14 @@ Mac 없이 GitHub Actions(클라우드 macOS)로 iOS 앱을 빌드해 TestFlight
 
 ## A. Apple 쪽 준비 (사용자 — 본인 Apple Developer 계정에서만 가능)
 
-### A-1. App Store Connect API 키 발급 (헤드리스 서명·업로드용)
+### A-1. App Store Connect API 키 발급 (업로드용)
 1. https://appstoreconnect.apple.com → **Users and Access** → **Integrations** 탭 → **App Store Connect API** (Team Keys)
 2. **Generate API Key** → 이름 아무거나(예: `github-ci`), **Access = App Manager** (또는 Admin)
 3. 생성되면 3가지 확보:
    - **Key ID** (10자, 예 `ABCD1234EF`) → GitHub secret `APPLE_API_KEY_ID`
    - **Issuer ID** (페이지 상단 UUID) → GitHub secret `APPLE_API_ISSUER_ID`
    - **`AuthKey_XXXXXXXXXX.p8` 파일 다운로드** (⚠️ 딱 한 번만 받을 수 있음 — 잘 보관)
-4. Team ID(10자): https://developer.apple.com/account → **Membership details** → **Team ID** → GitHub secret `APPLE_TEAM_ID` (멀티팀 계정이면 필수, 아니면 선택)
+4. https://developer.apple.com/account → **Membership details** → **Team ID** 확인 → GitHub secret `APPLE_TEAM_ID`에 **`SMF6T723XR` 필수 등록**. App·Extension 프로젝트와 다른 팀이면 워크플로가 실패한다.
 
 ### A-2. 앱 레코드 생성 (TestFlight 업로드 대상)
 1. App Store Connect → **Apps** → **➕ → New App**
@@ -32,6 +32,13 @@ Mac 없이 GitHub Actions(클라우드 macOS)로 iOS 앱을 빌드해 TestFlight
 2. App Store Connect → 해당 앱 → **TestFlight** 탭 → **Internal Testing** → 그룹 생성 → 본인 Apple ID 추가
    (내부 테스터는 Beta 심사 없이 처리 즉시 설치 가능)
 
+### A-4. App·Widget 서명 자원 준비
+팀 **`SMF6T723XR`**에서 App Group **`group.app.terraworld.mobile`**을 준비하고, App ID **`app.terraworld.mobile`**과 위젯 Extension App ID **`app.terraworld.mobile.TerraWidgetExtension`** 모두에 연결한다.
+같은 Distribution 인증서로 App Store 프로파일 **`TerraWorld App Store`**(App)와 **`TerraWorld Widget App Store`**(Widget)를 준비한다. App Group이 없는 기존 App 프로파일은 재발급해야 한다.
+서명에 사용할 Distribution 인증서·개인키가 포함된 **`.p12` 파일과 내보내기 암호**도 준비한다. 워크플로는 이를 임포트해 재사용한다.
+
+상세 절차는 [위젯 런북의 「iOS 광고·위젯 사람 작업 순서」](terra-widget-runbook.md#ios-광고위젯-사람-작업-순서)를 따른다: **1. App Group 생성 → 2. 기존 App ID에 연결 → 3. Extension App ID 생성·연결 → 4. 두 App Store 프로파일 발급 → 5. GitHub Actions secrets 설정**. 광고 App ID 준비는 같은 절의 **6. AdMob iOS 앱 등록**을 참조한다.
+
 ---
 
 ## B. GitHub Secrets 설정 (사용자 — 값이 나(AI)에게 노출되지 않도록 직접 등록)
@@ -43,7 +50,17 @@ Mac 없이 GitHub Actions(클라우드 macOS)로 iOS 앱을 빌드해 TestFlight
 | `APPLE_API_KEY_ID` | A-1 의 Key ID (10자) |
 | `APPLE_API_ISSUER_ID` | A-1 의 Issuer ID (UUID) |
 | `APPLE_API_KEY_P8_BASE64` | `.p8` 파일을 base64 인코딩한 **한 줄 문자열** (아래 참조) |
-| `APPLE_TEAM_ID` | Team ID (10자, 선택이지만 권장) |
+| `APPLE_DISTRIBUTION_CERT_P12_BASE64` | A-4 의 Distribution 인증서·개인키 `.p12`를 base64 인코딩한 한 줄 문자열 |
+| `APPLE_DISTRIBUTION_CERT_PASSWORD` | 해당 `.p12` 내보내기 암호 (빈 값이면 필수 시크릿 검사 실패) |
+| `APPLE_PROVISIONING_PROFILE_BASE64` | A-4 의 `TerraWorld App Store` App 프로파일(`.mobileprovision`)을 base64 인코딩한 한 줄 문자열 |
+| `APPLE_WIDGET_PROVISIONING_PROFILE_BASE64` | A-4 의 `TerraWorld Widget App Store` Extension 프로파일(`.mobileprovision`)을 base64 인코딩한 한 줄 문자열 |
+| `APPLE_TEAM_ID` | **필수**, App·Extension 팀 **`SMF6T723XR`** |
+
+위 **8개는 모두 필수**다. 두 프로파일의 이름·App ID·팀·App Group·App Store 배포 유형·유효기간을 archive 전에 검사한다.
+
+| 선택 Secret 이름 | 값 |
+|---|---|
+| `ADMOB_IOS_APP_ID` | iOS AdMob App ID. 미등록 시 Info.plist의 Google 공식 테스트 App ID로 빌드됨. 이 기본값은 LAN 테스트용이며 운영 배포용이 아님 |
 
 `.p8` → base64 한 줄 만들기:
 ```bash
@@ -55,6 +72,7 @@ base64 -w0 AuthKey_ABCD1234EF.p8    # (mac 이면 -w0 대신) base64 AuthKey_*.p
 [Convert]::ToBase64String([IO.File]::ReadAllBytes("AuthKey_ABCD1234EF.p8")) | Set-Clipboard
 ```
 출력 문자열 전체를 `APPLE_API_KEY_P8_BASE64` 값으로 붙여넣기.
+`.p12`와 두 `.mobileprovision` 파일도 위 명령의 파일 경로를 각각 바꾸어 인코딩하고, B 표의 해당 시크릿에 등록한다. `.p12` 암호는 인코딩하지 않고 `APPLE_DISTRIBUTION_CERT_PASSWORD`에 등록한다.
 
 > 🔒 `.p8`·키 값은 채팅에 붙여넣지 마세요 — GitHub Secrets 에만 넣으면 워크플로가 안전하게 사용합니다.
 
@@ -76,8 +94,12 @@ base64 -w0 AuthKey_ABCD1234EF.p8    # (mac 이면 -w0 대신) base64 AuthKey_*.p
 ## D. 트러블슈팅
 | 증상 | 원인/조치 |
 |---|---|
-| 워크플로가 "필수 Apple secrets 부재"로 실패 | B 의 secret 3개 미등록 — 이름 오타 확인 |
-| archive 단계 서명 실패 | A-1 키 Access 권한 부족(App Manager↑) / 번들ID 미등록(A-2 3) / 멀티팀이면 `APPLE_TEAM_ID` 등록 |
+| `GitHub Actions secret <이름> 누락` / `LAN TestFlight도 업로드 API 키·Distribution 인증서·App 및 Widget App Store 프로파일이 필요합니다.` | B 의 필수 8개 시크릿 이름·빈 값 확인. A-4 및 런북 사람 작업 1~5에 따라 두 프로파일 준비 |
+| `APPLE_TEAM_ID를 App·Extension의 팀 SMF6T723XR로 설정하세요` | B 의 `APPLE_TEAM_ID`를 정확히 `SMF6T723XR`로 설정 |
+| `<프로파일 이름> 프로파일을 <App ID>용으로 발급하고 group.app.terraworld.mobile을 연결하세요.` | App은 `TerraWorld App Store` / `SMF6T723XR.app.terraworld.mobile`, Widget은 `TerraWorld Widget App Store` / `SMF6T723XR.app.terraworld.mobile.TerraWidgetExtension`인지 확인. 두 프로파일 모두 팀 `SMF6T723XR`·App Group·App Store 배포 유형·유효기간 확인 후 재발급·시크릿 교체(A-4, 런북 사람 작업 1~5) |
+| 인증서 임포트 또는 archive 단계 서명 실패 | `.p12`·내보내기 암호·인증서/개인키와 두 프로파일을 확인(A-4, B). 워크플로의 `security find-identity` 결과와 xcodebuild 오류 확인 |
+| `archive에 TerraWidgetExtension.appex 누락` | archive의 `App.app/PlugIns/TerraWidgetExtension.appex`에 Info.plist와 Extension 실행 파일이 모두 필요한 검사다. 개발 담당자가 App scheme의 Extension 빌드·포함 설정 확인 |
+| `archive의 AdMob App ID가 App/Info.plist 설정과 일치하지 않음` | 개발 담당자가 archive의 `GADApplicationIdentifier`와 빌드 입력 `ios/App/App/Info.plist` 비교. 선택 시크릿 적용 단계와 archive 결과 확인 |
 | altool 업로드 실패(app not found) | A-2 앱 레코드(bundle `app.terraworld.mobile`) 미생성 |
 | 앱은 뜨는데 "연결 중…"만 | 아이폰이 PC 와 다른 WiFi / PC 서버 미실행 / 방화벽(3000·8080) / 공유기 AP isolation |
 | TestFlight 에 빌드 안 보임 | Apple 처리 지연(대기) 또는 CFBundleVersion 중복 — 재실행(run_number 자동 증가) |
