@@ -83,7 +83,8 @@ base64 -w0 AuthKey_ABCD1234EF.p8    # (mac 이면 -w0 대신) base64 AuthKey_*.p
 1. 개발 PC 의 **서버(backend+frontend)가 실행 중**인지 확인 (`docs/runbooks/local-lan-phone-test.md`).
    LAN IP 가 `192.168.79.119` 가 맞는지 확인 — 바뀌었으면 워크플로 실행 시 `server_url` 입력을 바꾸면 됨.
 2. GitHub → `TerraWorld-IT/mobile` → **Actions** → **iOS LAN Test (TestFlight)** → **Run workflow**
-   - `server_url` 기본값(`http://192.168.79.119:3000`) 확인/수정 → **Run**
+   - `server_url` 기본값(`http://192.168.79.119:3000`)과 `marketing_version` 기본값(`1.0.1`) 확인/수정 → **Run**. 버전은 승인된 최신 App Store 버전보다 높은 `X.Y.Z` 형식으로 입력한다.
+   - 빌드 번호는 이 워크플로의 `run_number`를 사용한다. 같은 마케팅 버전을 나중에 `release.yml`에서 쓰면 별도 `run_number`가 겹치거나 낮아 업로드가 거부될 수 있으므로 릴리스 전에 기존 업로드 빌드 번호를 확인한다.
 3. macOS 러너가 빌드·서명·업로드(약 5~15분). 성공 시 App Store Connect **TestFlight** 에 빌드가 뜸
    (첫 업로드는 Apple 처리에 몇 분~30분 소요될 수 있음).
 4. 처리 완료되면 아이폰 **TestFlight 앱**에 TerraWorld 가 나타남 → **설치** → 실행
