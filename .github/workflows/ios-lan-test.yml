@@ -30,6 +30,10 @@ on:
         description: '개발 PC LAN 서버 URL (WebView 가 로드할 주소)'
         required: true
         default: 'http://192.168.79.119:3000'
+      marketing_version:
+        description: '승인된 최신 App Store 버전보다 높은 X.Y.Z'
+        required: true
+        default: '1.0.1'
 
 concurrency:
   group: ios-lan-test
@@ -124,9 +128,17 @@ jobs:
 
       - name: Apply version (xcrun agvtool)
         working-directory: ios/App
+        env:
+          MARKETING_VERSION: ${{ github.event.inputs.marketing_version }}
         run: |
-          xcrun agvtool new-marketing-version "0.0.1"
+          set -euo pipefail
+          if [[ ! "$MARKETING_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::error::marketing_version은 X.Y.Z 형식이어야 합니다"
+            exit 1
+          fi
+          xcrun agvtool new-marketing-version "$MARKETING_VERSION"
           # 빌드 번호는 매 업로드마다 증가해야 함 → run_number 사용
+          # 같은 마케팅 버전의 후속 release는 별도 run_number가 겹치거나 낮아 업로드가 거부될 수 있음.
           xcrun agvtool new-version -all "${GITHUB_RUN_NUMBER}"
 
       - name: Decode Apple API key
