@@ -19,7 +19,7 @@ public class InAppReviewPlugin: CAPPlugin, CAPBridgedPlugin {
                 return
             }
 
-            if #available(iOS 16.0, *) {
+            if #available(iOS 18.0, *) {
                 AppStore.requestReview(in: scene)
             } else {
                 SKStoreReviewController.requestReview(in: scene)

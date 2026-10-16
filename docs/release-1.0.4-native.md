@@ -11,7 +11,7 @@
 
 웹은 호출 전에 각각 `Capacitor.isPluginAvailable('InAppReview')`, `Capacitor.isPluginAvailable('LocalNotifications')`를 확인한다. 구버전 앱·일반 브라우저·미지원 플랫폼에서는 호출을 건너뛴다. 웹 패키지 의존성은 모바일과 버전을 맞춘다.
 
-`InAppReview.requestReview()`는 MainActor에서 활성 foreground `UIWindowScene`을 찾는다. iOS 16 이상은 `AppStore.requestReview(in:)`, 이전 버전은 `SKStoreReviewController.requestReview(in:)`를 사용한다. 활성 scene이 없으면 Promise를 reject하므로 웹에서 오류를 처리해야 한다. 성공 응답 `{ requested: true }`는 요청 전달만 의미하며, 표시·평점 제출·리뷰 작성 완료를 뜻하지 않는다.
+`InAppReview.requestReview()`는 MainActor에서 활성 foreground `UIWindowScene`을 찾는다. iOS 18 이상은 `AppStore.requestReview(in:)`, 이전 버전(현재 앱 배포 대상 iOS 16.4~17.x)은 `SKStoreReviewController.requestReview(in:)`를 사용한다. 활성 scene이 없으면 Promise를 reject하므로 웹에서 오류를 처리해야 한다. 성공 응답 `{ requested: true }`는 요청 전달만 의미하며, 표시·평점 제출·리뷰 작성 완료를 뜻하지 않는다.
 
 평점 창 표시 여부는 iOS가 결정한다. TestFlight에서는 표시되지 않으므로 실기기 개발 빌드에서 표시 흐름을 확인한다. [Apple 평점 요청 문서](https://developer.apple.com/documentation/storekit/appstore/requestreview(in:)-1q8qs)
 
