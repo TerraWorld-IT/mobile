@@ -66,6 +66,7 @@ const config: CapacitorConfig = {
       '@capacitor/filesystem',
       '@capacitor/haptics',
       '@capacitor/keyboard',
+      '@capacitor/local-notifications',
       '@capacitor/network',
       '@capacitor/push-notifications',
       '@capacitor/share',
@@ -104,6 +105,7 @@ const config: CapacitorConfig = {
     // - 'cordova-plugin-purchase' 제외: Play Billing 라이브러리가 BILLING 권한을 넣는다. iOS 는
     //   release.yml 'iOS IAP gate' 때문에 유지하지만 Android 쪽 release.yml 에는 해당 검사가 없다.
     // - '@capacitor/camera' 제외: frontend 호출 0건인데 CameraX 네이티브 라이브러리(.so)가 딸려 온다.
+    // - '@capacitor/local-notifications' 제외: Android는 이번 출시 범위 밖이며 POST_NOTIFICATIONS·정확한 알람 권한 추가를 막는다. 도입 시 검사 스크립트의 제외 목록도 함께 갱신한다.
     // 도입 시 각 항목을 복원하고 AndroidManifest 의 AdMob APPLICATION_ID meta-data·build.gradle 의
     // admobAppId placeholder(docs/admob-config.md)를 함께 되살린다.
     includePlugins: [

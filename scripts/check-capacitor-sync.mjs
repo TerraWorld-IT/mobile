@@ -43,7 +43,8 @@ const MOBILE_ROOT = resolve(__dirname, '..')
 // 첫 출시 제외 결정 (2026-09-11, Android 는 Play 출시 준비에서 동일 적용). 바꿀 때는
 // capacitor.config.ts 의 주석·네이티브 설정 복원 목록과 함께 갱신한다.
 const EXPECTED_EXCLUDED = {
-  android: ['@capacitor-community/admob', '@capacitor/camera', 'cordova-plugin-purchase'],
+  // 로컬 알림은 Android 출시 범위 밖이며 POST_NOTIFICATIONS·정확한 알람 권한 추가를 막는다. 도입 시 allowlist와 함께 복원한다.
+  android: ['@capacitor-community/admob', '@capacitor/camera', '@capacitor/local-notifications', 'cordova-plugin-purchase'],
   // iOS는 보상형 광고를 포함하며 release.yml 'iOS IAP gate' 때문에 cordova-plugin-purchase 를 유지한다.
   ios: ['@capacitor/camera'],
 }
